@@ -4,7 +4,7 @@ import affine
 import sys
 
 def getLonLat(affine_transform,x_coord,y_coord):
-    # print("X:{},Y:{}".format(x_coord,y_coord))
+    print("LON LATX:{},Y:{}".format(x_coord,y_coord))
     lon, lat = affine_transform * (x_coord, y_coord)
     return (lon,lat)
 
@@ -12,7 +12,8 @@ def getLonLat(affine_transform,x_coord,y_coord):
 def getXY(affine_transform,lat,lon):
     inverse_transform = ~affine_transform
     x_coord, y_coord = [ round(f) for f in inverse_transform * (lon, lat) ]
-    return (x_coord,y_coord)
+    print("GETXT ",x_coord,y_coord,lat,lon)
+    # return (x_coord,y_coord)
 
 
 def process_dem(affine_transform,x_min,y_min,array):
@@ -23,8 +24,9 @@ def process_dem(affine_transform,x_min,y_min,array):
     height_val = array[x_highest][y_highest]
     return height_val,x_highest,y_highest,lat_lon,x_min+x_highest,y_min+y_highest
 
-def process_dtm(x_val,y_val,array):
-    # height = open(bounding_file,'a')
+def process_dtm(dtm_affine_transform,x_val,y_val,array,lat,lon):
+    getXY(dtm_affine_transform,lat,lon)
+    print(x_val,y_val)
     height_val = array[x_val][y_val]
     return height_val
 
@@ -45,7 +47,7 @@ def process_model(dem_file,dtm_file,bounding_file,bounding_list):
         dem_area = dem_band.ReadAsArray(x_min,y_min,x_max-x_min,y_max-y_min)
         dem_height,x_loc,y_loc,lat_lon,x_val,y_val = process_dem(dem_affine_transform,x_min,y_min,dem_area)
         dtm_area = dtm_band.ReadAsArray(x_min,y_min,x_max-x_min,y_max-y_min)
-        dtm_height = process_dtm(x_loc,y_loc,dtm_area)
+        dtm_height = process_dtm(dtm_affine_transform,x_loc,y_loc,dtm_area,lat_lon[1],lat_lon[0])
         # print([lat_lon,dem_height,dtm_height,x_val,y_val,dem_height-dtm_height])
         loc_data["{},{},{},{}".format(x_min,y_min,x_max,y_max)] = [lat_lon,dem_height,dtm_height,x_val,y_val,dem_height-dtm_height]
 

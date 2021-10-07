@@ -47,7 +47,7 @@ def draw_on_image(image,loc_data):
 
         font = cv2.FONT_HERSHEY_SIMPLEX
         cv2.putText(image, str(vals[-1]), ((ix+fx)//2,(iy+fy)//2), font, 3, (0, 255, 0), 2, cv2.LINE_AA)
-        print(ix,iy,fx,fy,(vals[-3],vals[-2]))
+        # print(ix,iy,fx,fy,(vals[-3],vals[-2]))
         cv2.circle(image, (vals[-3],vals[-2]), 10, (255,0,0),thickness=-1)
     cv2.imwrite("DBCA_marked.jpg",image)
 
@@ -124,6 +124,8 @@ while True:
         # draw_on_image(dummy_img,reversed)
         loc_data = dem_proc.process_model("DBCA_DEM.tif","DBCA_DTM.tif","bb.txt",reversed)
         draw_on_image(dummy_img,loc_data)
+        for x,y in loc_data.items():
+            print(x,y)
         break
   
 cv2.destroyAllWindows()

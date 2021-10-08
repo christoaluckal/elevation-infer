@@ -2,7 +2,7 @@ import cv2
 import dem_point_proc
 import tif_to_jpg
 
-img_og = cv2.imread("DBCA_Ortho.tif")
+img_og = cv2.imread("929_offset_ortho.jpg")
 
 img_og_shape = img_og.shape
 print("BIG SHAPE:",img_og_shape)
@@ -96,6 +96,7 @@ while True:
         # draw_on_image(dummy_img,loc_data)
         # for x,y in loc_data.items():
         #     print(x,y)
+        print(loc_data)
         break
   
 cv2.destroyAllWindows()

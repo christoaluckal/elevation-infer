@@ -5,7 +5,6 @@ import tif_to_jpg
 img_og = cv2.imread("929_offset_ortho.jpg")
 
 img_og_shape = img_og.shape
-print("BIG SHAPE:",img_og_shape)
 # cv2.namedWindow("output", cv2.WINDOW_NORMAL)  
 img_disp = cv2.resize(img_og,(img_og_shape[0]//16,img_og_shape[1]//16))
 # img_disp = cv2.resize(img_og,(img_og_shape[0]//2,img_og_shape[1]//2))
@@ -54,12 +53,10 @@ def draw_on_image(image,loc_data):
 
 def normalizebb(box_list_val,shape):
     norm_box_list = []
-    print("OG BOXLIST",box_list)
     for x in box_list_val:
         # print(x,shape)
         norm_box_list.append((x[0]/shape[1],x[1]/shape[0]))
     
-    print("NORMALIZED BOXLIST",norm_box_list)
     return norm_box_list
 
 
@@ -72,7 +69,6 @@ def reversenomarlize(box_list_val,shape):
         y1 = int(x[1]*shape[0])
         revnorm_box_list.append((x1,y1))
     
-    print("RE-NORMALIZED BOXLIST",revnorm_box_list)
     return revnorm_box_list
 
 def point_on_image(event,x,y,flags,param):
@@ -90,13 +86,13 @@ cv2.setMouseCallback("Title of Popup Window", point_on_image)
 while True:
     cv2.imshow("Title of Popup Window", img_disp)
     if cv2.waitKey(10) == 27:
+        print(box_list)
         normalized = normalizebb(box_list,img_disp.shape)
         reversed = reversenomarlize(normalized,img_og.shape)
         loc_data = dem_point_proc.process_model("DBCA_DEM.tif","DBCA_DTM.tif",reversed)
         # draw_on_image(dummy_img,loc_data)
         # for x,y in loc_data.items():
         #     print(x,y)
-        print(loc_data)
         break
   
 cv2.destroyAllWindows()

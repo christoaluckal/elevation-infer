@@ -5,7 +5,7 @@ import sys
 import cv2
 
 # ortho = cv2.imread("929_offset_ortho.jpg",cv2.IMREAD_UNCHANGED)
-dem = cv2.imread('DBCA_DEM.tif',cv2.IMREAD_UNCHANGED)
+# dem = cv2.imread('DBCA_DEM.tif',cv2.IMREAD_UNCHANGED)
 # dtm = cv2.imread('DBCA_DTM.tif',cv2.IMREAD_UNCHANGED)
 
 # print(ortho.shape)
@@ -16,7 +16,7 @@ dem = cv2.imread('DBCA_DEM.tif',cv2.IMREAD_UNCHANGED)
 # DEM: (24220, 22935)
 # DTM: (24220, 22935)
 # width,height= dem.shape
-cv2.imwrite('new_dem.tif',cv2.resize(dem,(24220//4,22935//4),interpolation = cv2.INTER_AREA))
+# cv2.imwrite('new_dem.tif',cv2.resize(dem,(24220//4,22935//4),interpolation = cv2.INTER_AREA))
 
 
 def getLonLat(affine_transform,x_coord,y_coord):
@@ -41,24 +41,23 @@ def process_dem(affine_transform,x_min,y_min,array):
     return height_val,x_highest,y_highest,lat_lon,x_min+x_highest,y_min+y_highest
 
 
-def process_dem_point(affine_transform,x_min,y_min,array):
-    lon,lat = getLonLat(affine_transform,x_min,y_min)
-    print("PM:",lon,lat)
+def process_dem_point(affine_transform,y_min,x_min,array):
+    # lon,lat = getLonLat(affine_transform,x_min,y_min)
+    # print("PM:",lon,lat)
     height_val = array[0][0]
-    print(height_val,(lon,lat))
+    # print(height_val,(lon,lat))
+    return height_val
 
+# 8973,930
 
 def process_model(dem_file):
     demdata = gdal.Open(str(dem_file))
     dem_affine_transform = affine.Affine.from_gdal(*demdata.GetGeoTransform())
     dem_band = demdata.GetRasterBand(1)
-    # dem_area = dem_band.ReadAsArray(13481,11243,1,1) #(startx,starty,endx,endy)
-    dem_area = dem_band.ReadAsArray(3476,12144,1,1) #(startx,starty,endx,endy)
+    x_coord,y_coord = 8973,930
+    dem_area = dem_band.ReadAsArray(x_coord,y_coord,1,1) #(startx,starty,endx,endy)
+    print(process_dem_point(dem_affine_transform,y_coord,x_coord,dem_area))
+    clon,clat = getLonLat(dem_affine_transform,x_coord,y_coord)
 
-    # solutions = np.argwhere(dem_area == -32767.0)
-    # print(solutions)
-    process_dem_point(dem_affine_transform,3476,12144,dem_area)
-    clon,clat = getLonLat(dem_affine_transform,3476,12144)
-
-# process_model('DBCA_DEM.tif')
+process_model('DBCA_DEM.tif')
 

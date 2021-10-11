@@ -1,3 +1,6 @@
+"""
+This code was made initially and only useful for rectangular regions which is not necessary. Don't use
+"""
 from osgeo import gdal
 import numpy as np
 import affine

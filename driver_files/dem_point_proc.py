@@ -4,27 +4,30 @@ import numpy as np
 import affine
 import sys
 
-def getLonLat(affine_transform,x_coord,y_coord):
+# This function takes an (X,Y) coordinate with the affine transform matrix and returns latitude and longitude
+def get_lon_at(affine_transform,x_coord,y_coord):
     lon, lat = affine_transform * (x_coord,y_coord)
     # print("LAT LON:",lon,lat)
     return lon,lat
 
-
-def getXY(affine_transform,lat,lon):
+# This is the inverse of getLonLat
+def get_xy(affine_transform,lat,lon):
     inverse_transform = ~affine_transform
     x_coord, y_coord = [ round(f) for f in inverse_transform * (lon, lat) ]
     # print("GETXT:",x_coord,y_coord,lon,lat)
     return (x_coord,y_coord)
 
-
+# Returns height,latitude and longtitude of the selected point only
 def process_dem_point(affine_transform,x_min,y_min,array):
-    lon,lat = getLonLat(affine_transform,x_min,y_min)
+    lon,lat = get_lon_at(affine_transform,x_min,y_min)
     height_val = array[0][0]
     return height_val,(lon,lat)
 
-
+# This function process the point along with its neighbouring pixels in each direction and averages the values that lie between 25% and 75%
+# This function ONLY computes the average height and not the location where that average exists, so the selected point and the point at which
+# the average exists are different
 def process_dem_quantile(affine_transform,x_min,y_min,array,threshold):
-    lon,lat = getLonLat(affine_transform,x_min,y_min)
+    lon,lat = get_lon_at(affine_transform,x_min,y_min)
     height_vals = []
     for i in range(2*threshold):
         for j in range(2*threshold):
@@ -40,12 +43,14 @@ def process_dem_quantile(affine_transform,x_min,y_min,array,threshold):
     height_val = np.average(np.array(height_vals[mask]))
     return height_val,(lon,lat)
 
+# Same as DEM, we process dtm to get the terrain height
 def process_dtm(dtm_file,x_min,y_min):
     dtmdata = gdal.Open(str(dtm_file))
     dtm_band = dtmdata.GetRasterBand(1)
     dtm_area = dtm_band.ReadAsArray(x_min,y_min,1,1)
     return dtm_area[0][0]
 
+# This function takes the DEM,DTM, point list and the mode of height selection and returns a dictionary with the (X,Y)(X+1,Y+1) as key and (Lat,Lon),Relative height as values
 def process_model(dem_file,dtm_file,bounding_list,mode):
     loc_data = {}
     demdata = gdal.Open(str(dem_file))

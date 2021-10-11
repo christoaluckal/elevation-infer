@@ -1,13 +1,25 @@
 import cv2
 import dem_point_proc
 import tif_to_jpg
+import sys
 
-img_og = cv2.imread("929_offset_ortho.jpg")
+args = sys.argv[1:]
+
+
+if len(args) < 3:
+    print("Missing files")
+    exit()
+else:
+    ortho_file = args[0]
+    dem_file = args[1]
+    dtm_file = args[2]
+
+img_og = cv2.imread(ortho_file)
 
 img_og_shape = img_og.shape
 img_disp = cv2.resize(img_og,(img_og_shape[0]//16,img_og_shape[1]//16))
 # img_disp = cv2.resize(img_og,(img_og_shape[0]//2,img_og_shape[1]//2))
-# dummy_img = cv2.imread('DBCA.jpg')
+dummy_img = img_og
 # cv2.imshow("output", img_disp)                            # Show image
 # cv2.waitKey(0)
 # variables
@@ -19,7 +31,7 @@ drawing = False
 
 box_list = []
 
-def draw_on_image(image,loc_data):
+def draw_box_on_image(image,loc_data):
     for points,vals in loc_data.items():
         # print(points)
         points_vals = points.split(',')
@@ -47,6 +59,22 @@ def draw_on_image(image,loc_data):
         # print(ix,iy,fx,fy,(vals[-3],vals[-2]))
         cv2.circle(image, (vals[-3],vals[-2]), 10, (255,0,0),thickness=-1)
     cv2.imwrite("DBCA_marked.jpg",image)
+
+def draw_point_on_image(image,loc_data,method):
+    for points,vals in loc_data.items():
+        # print(points)
+        points_vals = points.split(',')
+        # print(points_vals)
+        ix,iy,fx,fy = int(points_vals[0]),int(points_vals[1]),int(points_vals[2]),int(points_vals[3])
+        font = cv2.FONT_HERSHEY_SIMPLEX
+        if method!='default':
+            cv2.putText(image, "Quantile:"+str(vals[-1]), (ix+100,iy+100), font, 3, (0, 0, 255), 2, cv2.LINE_AA)
+            # print(ix,iy,fx,fy,(vals[-3],vals[-2]))
+            cv2.circle(image, (ix,iy), 10, (0, 0, 255),thickness=-1)
+        else:
+            cv2.putText(image, "Default:"+str(vals[-1]), (ix+100,iy+100), font, 3, (255, 0, 0), 2, cv2.LINE_AA)
+            # print(ix,iy,fx,fy,(vals[-3],vals[-2]))
+            cv2.circle(image, (ix,iy), 10, (255, 0, 0),thickness=-1)           
 
 
 def normalizebb(box_list_val,shape):
@@ -86,20 +114,22 @@ while True:
     if cv2.waitKey(10) == 27:
         normalized = normalizebb(box_list,img_disp.shape)
         reversed = reversenomarlize(normalized,img_og.shape)
-        loc_data = dem_point_proc.process_model("DBCA_DEM.tif","DBCA_DTM.tif",reversed,'default')
+        loc_data = dem_point_proc.process_model(dem_file,dtm_file,reversed,'default')
         # loc_data = dem_point_proc.process_model("DBCA_DEM.tif","DBCA_DTM.tif",reversed,'quantile')
         print("DEFAULT")
         # draw_on_image(dummy_img,loc_data)
         for x,y in loc_data.items():
             print(x,y)
 
-
+        # draw_point_on_image(dummy_img,loc_data,'default')
         print("\n\nQUANTILE")
-        loc_data = dem_point_proc.process_model("DBCA_DEM.tif","DBCA_DTM.tif",reversed,'quantile')
+        loc_data = dem_point_proc.process_model(dem_file,dtm_file,reversed,'quantile')
 
-        # draw_on_image(dummy_img,loc_data)
+        # draw_point_on_image(dummy_img,loc_data,'quantile')
         for x,y in loc_data.items():
             print(x,y)
+
+        # cv2.imwrite("DBCA_marked.jpg",dummy_img)
         break
   
 cv2.destroyAllWindows()

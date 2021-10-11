@@ -23,7 +23,7 @@ def process_dem_point(affine_transform,x_min,y_min,array):
     return height_val,(lon,lat)
 
 
-def process_dem_quartile(affine_transform,x_min,y_min,array,threshold):
+def process_dem_quantile(affine_transform,x_min,y_min,array,threshold):
     lon,lat = getLonLat(affine_transform,x_min,y_min)
     height_vals = []
     for i in range(2*threshold):
@@ -36,6 +36,7 @@ def process_dem_quartile(affine_transform,x_min,y_min,array,threshold):
 
     height_vals = np.array(height_vals)
     mask = np.where((height_vals > q1) & (height_vals<q3))
+    # height_val = np.average(np.array(height_vals[mask]))
     height_val = np.average(np.array(height_vals[mask]))
     return height_val,(lon,lat)
 
@@ -56,7 +57,7 @@ def process_model(dem_file,dtm_file,bounding_list,mode):
         if mode == 'quantile':
             threshold = 50
             dem_area = dem_band.ReadAsArray(x_min-threshold,y_min-threshold,2*threshold,2*threshold)
-            dem_height,lat_lon = process_dem_quartile(dem_affine_transform,x_min,y_min,dem_area,threshold)
+            dem_height,lat_lon = process_dem_quantile(dem_affine_transform,x_min,y_min,dem_area,threshold)
         else:
             dem_area = dem_band.ReadAsArray(x_min,y_min,1,1) # Band is (X,Y), # GetLonLat is (X,Y)
             dem_height,lat_lon = process_dem_point(dem_affine_transform,x_min,y_min,dem_area)

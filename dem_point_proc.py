@@ -31,11 +31,12 @@ def process_dem_quartile(affine_transform,x_min,y_min,array,threshold):
             height_vals.append(array[i][j])
 
     import numpy as np
-    q1 = np.quantile(height_vals,25)
-    q3 = np.quantile(height_vals,75)
+    q1 = np.percentile(height_vals,25)
+    q3 = np.percentile(height_vals,75)
 
-    print(q1,q3)
-    height_val = 0
+    height_vals = np.array(height_vals)
+    mask = np.where((height_vals > q1) & (height_vals<q3))
+    height_val = np.average(np.array(height_vals[mask]))
     return height_val,(lon,lat)
 
 def process_dtm(dtm_file,x_min,y_min):

@@ -56,7 +56,7 @@ def process_model(dem_file):
     dem_band = demdata.GetRasterBand(1)
     x_coord,y_coord = 3456,13115
     dem_area = dem_band.ReadAsArray(x_coord,y_coord,1,1) #(startx,starty,endx,endy)
-    print(process_dem_point(dem_affine_transform,y_coord,x_coord,dem_area))
+    print(process_dem_point_test(dem_affine_transform,y_coord,x_coord,dem_area))
     clon,clat = getLonLat(dem_affine_transform,x_coord,y_coord)
 
 process_model('DBCA_DEM.tif')

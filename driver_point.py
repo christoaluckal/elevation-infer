@@ -86,7 +86,13 @@ while True:
     if cv2.waitKey(10) == 27:
         normalized = normalizebb(box_list,img_disp.shape)
         reversed = reversenomarlize(normalized,img_og.shape)
-        # loc_data = dem_point_proc.process_model("DBCA_DEM.tif","DBCA_DTM.tif",reversed,'default')
+        loc_data = dem_point_proc.process_model("DBCA_DEM.tif","DBCA_DTM.tif",reversed,'default')
+        # loc_data = dem_point_proc.process_model("DBCA_DEM.tif","DBCA_DTM.tif",reversed,'quantile')
+
+        # draw_on_image(dummy_img,loc_data)
+        for x,y in loc_data.items():
+            print(x,y)
+
         loc_data = dem_point_proc.process_model("DBCA_DEM.tif","DBCA_DTM.tif",reversed,'quantile')
 
         # draw_on_image(dummy_img,loc_data)

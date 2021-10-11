@@ -41,7 +41,7 @@ def process_dem(affine_transform,x_min,y_min,array):
     return height_val,x_highest,y_highest,lat_lon,x_min+x_highest,y_min+y_highest
 
 
-def process_dem_point(affine_transform,y_min,x_min,array):
+def process_dem_point_test(affine_transform,y_min,x_min,array):
     # lon,lat = getLonLat(affine_transform,x_min,y_min)
     # print("PM:",lon,lat)
     height_val = array[0][0]

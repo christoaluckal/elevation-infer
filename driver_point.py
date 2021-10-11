@@ -88,11 +88,13 @@ while True:
         reversed = reversenomarlize(normalized,img_og.shape)
         loc_data = dem_point_proc.process_model("DBCA_DEM.tif","DBCA_DTM.tif",reversed,'default')
         # loc_data = dem_point_proc.process_model("DBCA_DEM.tif","DBCA_DTM.tif",reversed,'quantile')
-
+        print("DEFAULT")
         # draw_on_image(dummy_img,loc_data)
         for x,y in loc_data.items():
             print(x,y)
 
+
+        print("\n\nQUANTILE")
         loc_data = dem_point_proc.process_model("DBCA_DEM.tif","DBCA_DTM.tif",reversed,'quantile')
 
         # draw_on_image(dummy_img,loc_data)

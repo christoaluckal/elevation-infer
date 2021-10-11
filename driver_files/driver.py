@@ -1,8 +1,8 @@
 import cv2
 import dem_proc
-import tif_to_jpg
+# import tif_to_jpg
 
-img_og = cv2.imread("DBCA_Ortho.tif")
+img_og = cv2.imread("/home/caluckal/Desktop/Github/elevation-infer/DBCA_Ortho.tif")
 
 img_og_shape = img_og.shape
 # cv2.namedWindow("output", cv2.WINDOW_NORMAL)  

@@ -5,10 +5,8 @@ import tif_to_jpg
 img_og = cv2.imread("929_offset_ortho.jpg")
 
 img_og_shape = img_og.shape
-# cv2.namedWindow("output", cv2.WINDOW_NORMAL)  
 img_disp = cv2.resize(img_og,(img_og_shape[0]//16,img_og_shape[1]//16))
 # img_disp = cv2.resize(img_og,(img_og_shape[0]//2,img_og_shape[1]//2))
-# tif_to_jpg.converttiftojpg("DBCA_Ortho.tif","DBCA.jpg")
 # dummy_img = cv2.imread('DBCA.jpg')
 # cv2.imshow("output", img_disp)                            # Show image
 # cv2.waitKey(0)
@@ -86,13 +84,12 @@ cv2.setMouseCallback("Title of Popup Window", point_on_image)
 while True:
     cv2.imshow("Title of Popup Window", img_disp)
     if cv2.waitKey(10) == 27:
-        print(box_list)
         normalized = normalizebb(box_list,img_disp.shape)
         reversed = reversenomarlize(normalized,img_og.shape)
         loc_data = dem_point_proc.process_model("DBCA_DEM.tif","DBCA_DTM.tif",reversed)
         # draw_on_image(dummy_img,loc_data)
-        # for x,y in loc_data.items():
-        #     print(x,y)
+        for x,y in loc_data.items():
+            print(x,y)
         break
   
 cv2.destroyAllWindows()

@@ -54,7 +54,7 @@ def process_model(dem_file):
     demdata = gdal.Open(str(dem_file))
     dem_affine_transform = affine.Affine.from_gdal(*demdata.GetGeoTransform())
     dem_band = demdata.GetRasterBand(1)
-    x_coord,y_coord = 8973,930
+    x_coord,y_coord = 3456,13115
     dem_area = dem_band.ReadAsArray(x_coord,y_coord,1,1) #(startx,starty,endx,endy)
     print(process_dem_point(dem_affine_transform,y_coord,x_coord,dem_area))
     clon,clat = getLonLat(dem_affine_transform,x_coord,y_coord)

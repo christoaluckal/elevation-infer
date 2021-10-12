@@ -1,15 +1,43 @@
 import cv2
 import dem_proc
-# import tif_to_jpg
+import sys
 
-img_og = cv2.imread("/home/caluckal/Desktop/Github/elevation-infer/DBCA_Ortho.tif")
+# Invocation is python3 driver_point.py <JPG for clicking> <DEM file> <DTM file>
+args = sys.argv[1:]
+
+if len(args) < 3:
+    print("Missing files")
+    exit()
+else:
+    ortho_file = args[0]
+    dem_file = args[1]
+    dtm_file = args[2]
+
+img_og = cv2.imread(ortho_file)
+img_og_shape = img_og.shape
+
+# We downscale the original image to be able to show it in a window. This definitely leads to a ~5% error in pixel calculations
+img_disp = cv2.resize(img_og,(img_og_shape[0]//16,img_og_shape[1]//16))
+
+# Dummy image array for saving purposes
+dummy_img = img_og
+
+# Pixel location variables
+ix = -1
+iy = -1
+fx = -1
+fy = -1
+
+# Pixel location storage
+box_list = []
+
 
 img_og_shape = img_og.shape
 # cv2.namedWindow("output", cv2.WINDOW_NORMAL)  
 img_disp = cv2.resize(img_og,(img_og_shape[0]//16,img_og_shape[1]//16))
 # img_disp = cv2.resize(img_og,(img_og_shape[0]//2,img_og_shape[1]//2))
 # tif_to_jpg.converttiftojpg("DBCA_Ortho.tif","DBCA.jpg")
-dummy_img = cv2.imread('DBCA.jpg')
+# dummy_img = cv2.imread('DBCA.jpg')
 # cv2.imshow("output", img_disp)                            # Show image
 # cv2.waitKey(0)
 # variables
@@ -51,6 +79,7 @@ def draw_on_image(image,loc_data):
     cv2.imwrite("DBCA_marked.jpg",image)
 
 
+# Since we need a precise location on the downscaled image, we normalize the pixel location using the downscaled resolution
 def normalizebb(box_list_val,shape):
     norm_box_list = []
     for x in box_list_val:
@@ -59,7 +88,7 @@ def normalizebb(box_list_val,shape):
     
     return norm_box_list
 
-
+# When we process the DEM we need the actual pixel locations and not the downscaled one. So we reverse the normalization using the original image resolution
 def reversenomarlize(box_list_val,shape):
     revnorm_box_list = []
     for x in box_list_val:
@@ -71,6 +100,7 @@ def reversenomarlize(box_list_val,shape):
         revnorm_box_list.append((x1,y1,x2,y2))
     
     return revnorm_box_list
+
 
 def draw_rectangle_with_drag(event, x, y, flags, param):
       
@@ -116,13 +146,8 @@ while True:
     if cv2.waitKey(10) == 27:
         normalized = normalizebb(box_list,img_disp.shape)
         reversed = reversenomarlize(normalized,img_og.shape)
-        # with open('bb.txt','w+') as bb:
-        #     for x in reversed:
-        #         string = str(x[1])+'\t'+str(x[0])+'\t'+str(x[3])+'\t'+str(x[2])+'\t'+'\n'
-        #         bb.write(string)
-        # draw_on_image(dummy_img,reversed)
-        loc_data = dem_proc.process_model("DBCA_DEM.tif","DBCA_DTM.tif","bb.txt",reversed)
-        draw_on_image(dummy_img,loc_data)
+        loc_data = dem_proc.process_model(dem_file,dtm_file,reversed,'quantile')
+        # draw_on_image(dummy_img,loc_data)
         for x,y in loc_data.items():
             print(x,y)
         break

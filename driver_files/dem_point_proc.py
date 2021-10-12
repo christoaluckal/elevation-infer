@@ -10,6 +10,29 @@ def get_lon_at(affine_transform,x_coord,y_coord):
     # print("LAT LON:",lon,lat)
     return lon,lat
 
+def process_area(dem_file,dtm_file,y1,x1,y2,x2):
+    demdata = gdal.Open(str(dem_file))
+    dem_band = demdata.GetRasterBand(1)
+    dem_area = dem_band.ReadAsArray(x1,y1,x2-x1,y2-y1)
+    del dem_band
+    dtmdata = gdal.Open(str(dtm_file))
+    dtm_band = dtmdata.GetRasterBand(1)
+    dtm_area = dtm_band.ReadAsArray(x1,y1,x2-x1,y2-y1)
+    del dtm_band
+
+    area_diff = []
+    for height in range(y2-y1):
+        temp = []
+        for width in range(x2-x1):
+            height_val = dem_area[height][width]-dtm_area[height][width]
+            if height_val > 1:
+                temp.append(dem_area[height][width]-dtm_area[height][width])
+            else:
+                temp.append(0)
+        area_diff.append(temp)
+
+    return area_diff
+
 # This is the inverse of getLonLat
 def get_xy(affine_transform,lat,lon):
     inverse_transform = ~affine_transform

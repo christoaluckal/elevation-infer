@@ -1,58 +1,97 @@
-"""
-This code was made initially and only useful for rectangular regions which is not necessary. Don't use
-"""
 from osgeo import gdal
 import numpy as np
 import affine
 import sys
+sys.path.append('.')
+from image_process.segment import draw_contours
+# This function takes an (X,Y) coordinate with the affine transform matrix and returns latitude and longitude
+def get_lon_at(affine_transform,x_coord,y_coord):
+    lon, lat = affine_transform * (x_coord,y_coord)
+    # print("LAT LON:",lon,lat)
+    return lon,lat
 
-def getLonLat(affine_transform,x_coord,y_coord):
-    print("LON LATX:{},Y:{}".format(x_coord,y_coord))
-    lon, lat = affine_transform * (x_coord, y_coord)
-    return (lon,lat)
+def process_area(dem_file,dtm_file,y1,x1,y2,x2):
+    demdata = gdal.Open(str(dem_file))
+    dem_band = demdata.GetRasterBand(1)
+    dem_area = dem_band.ReadAsArray(x1,y1,x2-x1,y2-y1)
+    del dem_band
+    dtmdata = gdal.Open(str(dtm_file))
+    dtm_band = dtmdata.GetRasterBand(1)
+    dtm_area = dtm_band.ReadAsArray(x1,y1,x2-x1,y2-y1)
+    del dtm_band
 
+    area_diff = []
+    for height in range(y2-y1):
+        temp = []
+        for width in range(x2-x1):
+            height_val = dem_area[height][width]-dtm_area[height][width]
+            if height_val > 1:
+                temp.append(dem_area[height][width]-dtm_area[height][width])
+            else:
+                temp.append(0)
+        area_diff.append(temp)
 
-def getXY(affine_transform,lat,lon):
+    return area_diff
+
+# This is the inverse of getLonLat
+def get_xy(affine_transform,lat,lon):
     inverse_transform = ~affine_transform
     x_coord, y_coord = [ round(f) for f in inverse_transform * (lon, lat) ]
-    print("GETXT ",x_coord,y_coord,lat,lon)
-    # return (x_coord,y_coord)
+    # print("GETXT:",x_coord,y_coord,lon,lat)
+    return (x_coord,y_coord)
 
+# Returns height,latitude and longtitude of the selected point only
+def process_dem_point(affine_transform,x_min,y_min,array):
+    lon,lat = get_lon_at(affine_transform,x_min,y_min)
+    height_val = array[0][0]
+    return height_val,(lon,lat)
 
-def process_dem(affine_transform,x_min,y_min,array):
-    index_of_highest = list(np.unravel_index(np.argmax(array, axis=None), array.shape))
-    x_highest,y_highest = index_of_highest[0],index_of_highest[1]
-    # height = open(bounding_file,'a')
-    lat_lon = getLonLat(affine_transform,x_min+x_highest,y_min+y_highest)
-    height_val = array[x_highest][y_highest]
-    return height_val,x_highest,y_highest,lat_lon,x_min+x_highest,y_min+y_highest
+# This function process the point along with its neighbouring pixels in each direction and averages the values that lie between 25% and 75%
+# This function ONLY computes the average height and not the location where that average exists, so the selected point and the point at which
+# the average exists are different
+def process_dem_quantile(affine_transform,x_min,y_min,array,threshold_x,threshold_y):
+    lon,lat = get_lon_at(affine_transform,x_min,y_min) # TODO CHANGE THIS TO GET THE coordinates
+    height_vals = []
+    for i in range(threshold_x):
+        for j in range(threshold_y):
+            height_vals.append(array[j][i])
 
-def process_dtm(dtm_affine_transform,x_val,y_val,array,lat,lon):
-    getXY(dtm_affine_transform,lat,lon)
-    print(x_val,y_val)
-    height_val = array[x_val][y_val]
-    return height_val
+    import numpy as np
+    q1 = np.percentile(height_vals,25)
+    q3 = np.percentile(height_vals,75)
 
+    height_vals = np.array(height_vals)
+    mask = np.where((height_vals > q1) & (height_vals<q3))
+    # height_val = np.average(np.array(height_vals[mask]))
+    height_val = np.average(np.array(height_vals[mask]))
+    return height_val,(lon,lat)
 
-def process_model(dem_file,dtm_file,bounding_file,bounding_list):
+# Same as DEM, we process dtm to get the terrain height
+def process_dtm(dtm_file,x_min,y_min):
+    dtmdata = gdal.Open(str(dtm_file))
+    dtm_band = dtmdata.GetRasterBand(1)
+    dtm_area = dtm_band.ReadAsArray(x_min,y_min,1,1)
+    return dtm_area[0][0]
+
+# This function takes the DEM,DTM, point list and the mode of height selection and returns a dictionary with the (X,Y)(X+1,Y+1) as key and (Lat,Lon),Relative height as values
+def process_model(dem_file,dtm_file,bounding_list,mode):
     loc_data = {}
     demdata = gdal.Open(str(dem_file))
-    dtmdata = gdal.Open(str(dtm_file))
+    # dtmdata = gdal.Open(str(dtm_file))
     dem_affine_transform = affine.Affine.from_gdal(*demdata.GetGeoTransform())
     dem_band = demdata.GetRasterBand(1)
-    dtm_affine_transform = affine.Affine.from_gdal(*dtmdata.GetGeoTransform())
-    dtm_band = dtmdata.GetRasterBand(1)
-    # bounding_file = bounding_file # File with the bounding box list as (ymin,xmin,ymax,xmax) 
-    coords = open(bounding_file,'a')
     for x in bounding_list:
-        li = x
-        y_min,x_min,y_max,x_max = int(li[1]),int(li[0]),int(li[3]),int(li[2])
-        dem_area = dem_band.ReadAsArray(x_min,y_min,x_max-x_min,y_max-y_min)
-        dem_height,x_loc,y_loc,lat_lon,x_val,y_val = process_dem(dem_affine_transform,x_min,y_min,dem_area)
-        dtm_area = dtm_band.ReadAsArray(x_min,y_min,x_max-x_min,y_max-y_min)
-        dtm_height = process_dtm(dtm_affine_transform,x_loc,y_loc,dtm_area,lat_lon[1],lat_lon[0])
-        # print([lat_lon,dem_height,dtm_height,x_val,y_val,dem_height-dtm_height])
-        loc_data["{},{},{},{}".format(x_min,y_min,x_max,y_max)] = [lat_lon,dem_height,dtm_height,x_val,y_val,dem_height-dtm_height]
+        x_min,y_min,x_max,y_max = int(x[0]),int(x[1]),int(x[2]),int(x[3])
+        if mode == 'quantile':
+            dem_area = dem_band.ReadAsArray(x_min,y_min,x_max-x_min,y_max-y_min)
+            contour_length = draw_contours(dem_file,dtm_file,y_min,x_min,y_max,x_max)
+            print("CONTOURS:",contour_length)
+            dem_height,lat_lon = process_dem_quantile(dem_affine_transform,x_min,y_min,dem_area,x_max-x_min,y_max-y_min)
+        else:
+            dem_area = dem_band.ReadAsArray(x_min,y_min,1,1) # Band is (X,Y), # GetLonLat is (X,Y)
+            dem_height,lat_lon = process_dem_point(dem_affine_transform,x_min,y_min,dem_area)
+        dtm_height = process_dtm(dtm_file,x_min,y_min)
+        loc_data["{},{},{},{}".format(x_min,y_min,x_max,y_max)] = [lat_lon,dem_height,dtm_height,x_min,y_min]
 
     return loc_data
 

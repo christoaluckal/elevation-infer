@@ -1,7 +1,7 @@
 import cv2
 import sys
 import matplotlib.pyplot as plt
-sys.path.append("../")
+sys.path.append(".")
 import driver_files.dem_point_proc as dr
 
 good_range = (11289,12027,11814,12312)
@@ -24,14 +24,14 @@ def get_contour_areas(contours,tot_pixel):
     all_areas= []
     for cnt in contours:
         area = cv2.contourArea(cnt)
-        if area > tot_pixel*0.17 and area < tot_pixel*0.95:
+        if area > tot_pixel*0.18 and area < tot_pixel*0.95:
             print(area)
             all_areas.append(cnt)
 
     return all_areas
 
-def draw_contours(y1,x1,y2,x2):
-    area = dr.process_area('/home/caluckal/Desktop/Github/elevation-infer/DBCA_DEM.tif','/home/caluckal/Desktop/Github/elevation-infer/DBCA_DTM.tif',y1,x1,y2,x2)
+def draw_contours(dem_file,dtm_file,y1,x1,y2,x2):
+    area = dr.process_area(dem_file,dtm_file,y1,x1,y2,x2)
     import numpy as np
     area = np.array(area)
     from PIL import Image
@@ -49,12 +49,13 @@ def draw_contours(y1,x1,y2,x2):
     contour_list = get_contour_areas(contours,image_pixel_count)
     # image = cv2.drawContours(image, get_contour_areas(contours), -1, (0, 255, 0), 2)
     image = cv2.drawContours(image,contour_list , -1, (0, 255, 0), 2)
-    print(contour_list)
     plt.imshow(image)
     plt.show()
+    return len(contour_list)
 
 
-draw_contours(11289,12027,11814,12312)
+# draw_contours('/home/caluckal/Desktop/Github/elevation-infer/DBCA_DEM.tif','/home/caluckal/Desktop/Github/elevation-infer/DBCA_DTM.tif',8214,11626,9126,12323)
+# draw_contours(11289,12027,11814,12312)
 # draw_contours(11243,10689,11747,11220)
 # draw_contours(13492,5884,14988,8004)
 # draw_contours(13312,8164,13964,8884)

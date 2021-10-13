@@ -33,13 +33,14 @@ ortho_h,ortho_w,_ = ortho_file.shape
 #     pass
 
 blank_image = np.zeros((24220,22935,3), np.uint8)
-
+print(ortho_file[12000][12000])
 for x in range(ortho_h):
     for y in range(ortho_w):
-        blank_image[929+x][y] = ortho_file[x][y][0]
+        # print(ortho_file[x],ortho_file[x][y],ortho_file[x][y][0])
+        blank_image[929+x][y] = ortho_file[x][y]
 
 del ortho_file
 
-cv2.imwrite('929_offset_ortho.jpg',blank_image)
+cv2.imwrite('color_ortho.jpg',blank_image)
 
 # print(ortho_h,ortho_w,dem_h,dem_w)

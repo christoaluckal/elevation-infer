@@ -1,9 +1,11 @@
+from matplotlib.pyplot import contour
 from osgeo import gdal
 import numpy as np
 import affine
 import sys
+import cv2
 sys.path.append('.')
-from image_process.segment import draw_contours
+# from image_process.segment import draw_contours
 # This function takes an (X,Y) coordinate with the affine transform matrix and returns latitude and longitude
 def get_lon_at(affine_transform,x_coord,y_coord):
     lon, lat = affine_transform * (x_coord,y_coord)
@@ -59,7 +61,6 @@ def process_dem_quantile(affine_transform,x_min,y_min,array,threshold_x,threshol
     import numpy as np
     q1 = np.percentile(height_vals,25)
     q3 = np.percentile(height_vals,75)
-
     height_vals = np.array(height_vals)
     mask = np.where((height_vals > q1) & (height_vals<q3))
     # height_val = np.average(np.array(height_vals[mask]))
@@ -73,6 +74,43 @@ def process_dtm(dtm_file,x_min,y_min):
     dtm_area = dtm_band.ReadAsArray(x_min,y_min,1,1)
     return dtm_area[0][0]
 
+
+def get_contour_areas(contours,tot_pixel):
+
+    all_areas= []
+    for cnt in contours:
+        area = cv2.contourArea(cnt)
+        if area > tot_pixel*0.18 and area < tot_pixel*0.95:
+            print(area)
+            all_areas.append(cnt)
+
+    return all_areas
+
+def draw_contours(dem_file,dtm_file,y1,x1,y2,x2):
+    area = process_area(dem_file,dtm_file,y1,x1,y2,x2)
+    print(y1,x1,y2,x2)
+    import numpy as np
+    area = np.array(area)
+    from PIL import Image
+    import numpy as np
+    import matplotlib.pyplot as plt
+    formatted = (area * 255 / np.max(area)).astype('uint8')
+    img = Image.fromarray(formatted)
+    image = np.array(img)
+    image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+    gray = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
+    _, binary = cv2.threshold(gray, 1, 255, cv2.THRESH_BINARY_INV)
+    contours, hierarchy = cv2.findContours(binary, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+    image_pixel_count = image.shape[0]*image.shape[1]
+    # sorted_contours= sorted(contours, key=cv2.contourArea, reverse= True)
+    contour_list = get_contour_areas(contours,image_pixel_count)
+    # image = cv2.drawContours(image, get_contour_areas(contours), -1, (0, 255, 0), 2)
+    # print(contour_list)
+    image = cv2.drawContours(image,contour_list , -1, (0, 255, 0), 2)
+    plt.imshow(image)
+    plt.show()
+    return len(contour_list)
+
 # This function takes the DEM,DTM, point list and the mode of height selection and returns a dictionary with the (X,Y)(X+1,Y+1) as key and (Lat,Lon),Relative height as values
 def process_model(dem_file,dtm_file,bounding_list,mode):
     loc_data = {}
@@ -82,16 +120,18 @@ def process_model(dem_file,dtm_file,bounding_list,mode):
     dem_band = demdata.GetRasterBand(1)
     for x in bounding_list:
         x_min,y_min,x_max,y_max = int(x[0]),int(x[1]),int(x[2]),int(x[3])
-        if mode == 'quantile':
-            dem_area = dem_band.ReadAsArray(x_min,y_min,x_max-x_min,y_max-y_min)
-            contour_length = draw_contours(dem_file,dtm_file,y_min,x_min,y_max,x_max)
-            print("CONTOURS:",contour_length)
-            dem_height,lat_lon = process_dem_quantile(dem_affine_transform,x_min,y_min,dem_area,x_max-x_min,y_max-y_min)
+        contour_length = draw_contours(dem_file,dtm_file,y_min,x_min,y_max,x_max)
+        if contour_length > 0:
+            if mode == 'quantile':
+                dem_area = dem_band.ReadAsArray(x_min,y_min,x_max-x_min,y_max-y_min)
+                dem_height,lat_lon = process_dem_quantile(dem_affine_transform,x_min,y_min,dem_area,x_max-x_min,y_max-y_min)
+            else:
+                dem_area = dem_band.ReadAsArray(x_min,y_min,1,1) # Band is (X,Y), # GetLonLat is (X,Y)
+                dem_height,lat_lon = process_dem_point(dem_affine_transform,x_min,y_min,dem_area)
+            dtm_height = process_dtm(dtm_file,x_min,y_min)
+            loc_data["{},{},{},{}".format(x_min,y_min,x_max,y_max)] = [lat_lon,dem_height,dtm_height,x_min,y_min]
         else:
-            dem_area = dem_band.ReadAsArray(x_min,y_min,1,1) # Band is (X,Y), # GetLonLat is (X,Y)
-            dem_height,lat_lon = process_dem_point(dem_affine_transform,x_min,y_min,dem_area)
-        dtm_height = process_dtm(dtm_file,x_min,y_min)
-        loc_data["{},{},{},{}".format(x_min,y_min,x_max,y_max)] = [lat_lon,dem_height,dtm_height,x_min,y_min]
+            loc_data["{},{},{},{}".format(x_min,y_min,x_max,y_max)] = [-9999,-9999,-9999,-9999,-9999]
 
     return loc_data
 

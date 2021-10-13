@@ -1,4 +1,5 @@
 import cv2
+from matplotlib.pyplot import contour
 import dem_proc
 import sys
 
@@ -48,6 +49,7 @@ fy = -1
 drawing = False
 
 box_list = []
+loc_data = {}
 
 def draw_on_image(image,loc_data):
     for points,vals in loc_data.items():
@@ -146,6 +148,8 @@ while True:
     if cv2.waitKey(10) == 27:
         normalized = normalizebb(box_list,img_disp.shape)
         reversed = reversenomarlize(normalized,img_og.shape)
+        # Check contour numbers
+
         loc_data = dem_proc.process_model(dem_file,dtm_file,reversed,'quantile')
         # draw_on_image(dummy_img,loc_data)
         for x,y in loc_data.items():

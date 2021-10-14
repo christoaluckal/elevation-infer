@@ -63,22 +63,28 @@ def process_dem_point(affine_transform,x_min,y_min,array):
 # the average exists are different
 def process_dem_quantile(affine_transform,x_min,y_min,array,threshold_x,threshold_y):
     # start = time()
-    lon,lat = get_lon_at(affine_transform,x_min,y_min) # TODO CHANGE THIS TO GET THE coordinates
+    # lon,lat = get_lon_at(affine_transform,x_min,y_min) # TODO CHANGE THIS TO GET THE coordinates
+    # print(x_min,y_min,threshold_x,threshold_y)
     height_vals = []
+    array = np.array(array)
     for i in range(threshold_x):
         for j in range(threshold_y):
             height_vals.append(array[j][i])
 
+    height_vals = sorted(height_vals)
     q1 = np.percentile(height_vals,25)
     q3 = np.percentile(height_vals,75)
-    height_vals = np.array(height_vals)
-    mask = np.where((height_vals > q1) & (height_vals<q3))
-    # height_val = np.average(np.array(height_vals[mask]))
-    height_val = np.average(np.array(height_vals[mask]))
-    # end = time()
-    # print("DEM QUARTILE:",end-start)
-    return height_val,(lon,lat)
 
+    height_vals = np.array(height_vals)
+
+    mask = ((height_vals > q1) & (height_vals<q3))
+    # height_val = np.average(np.array(height_vals[mask]))
+    height_vals = height_vals[mask]
+    height_check = height_vals[len(height_vals)//2]
+    positions = np.where(array == height_check)
+    lon,lat = get_lon_at(affine_transform,x_min+positions[1][0],y_min+positions[0][0])
+    return height_check,(lon,lat)
+    
 # Same as DEM, we process dtm to get the terrain height
 def process_dtm(dtm_file,x_min,y_min):
     dtmdata = gdal.Open(str(dtm_file))
@@ -89,7 +95,7 @@ def process_dtm(dtm_file,x_min,y_min):
 
 def get_trees(image_array,y1,x1,y2,x2):
     # start = time()
-    low_green = np.array([36, 20, 20])
+    low_green = np.array([25, 20, 20])
     high_green = np.array([100, 255,255])
     # greent_test = np.array([[[197,200,147]]],np.uint8)
     # greent_test = cv2.cvtColor(greent_test,cv2.COLOR_BGR2HSV)

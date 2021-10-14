@@ -5,6 +5,8 @@ import affine
 import sys
 import cv2
 from time import time
+from PIL import Image
+import matplotlib.pyplot as plt
 sys.path.append('.')
 # from image_process.segment import draw_contours
 # This function takes an (X,Y) coordinate with the affine transform matrix and returns latitude and longitude
@@ -67,7 +69,6 @@ def process_dem_quantile(affine_transform,x_min,y_min,array,threshold_x,threshol
         for j in range(threshold_y):
             height_vals.append(array[j][i])
 
-    import numpy as np
     q1 = np.percentile(height_vals,25)
     q3 = np.percentile(height_vals,75)
     height_vals = np.array(height_vals)
@@ -109,14 +110,24 @@ def get_trees(image_array,y1,x1,y2,x2):
 def get_contour_areas(contours,tot_pixel):
     # start = time()
     all_areas= []
+    points = []
     for cnt in contours:
         area = cv2.contourArea(cnt)
-        if area > tot_pixel*0.05 and area < tot_pixel*0.95:
+        # print(len(cnt))
+        if area > tot_pixel*0.006 and area < tot_pixel*0.95:
             # print(area)
+            # epsilon = 0.1*cv2.arcLength(cnt,True)
+            # approx = cv2.approxPolyDP(cnt,epsilon,True)
+            # print(approx)
+            x,y,w,h = cv2.boundingRect(cnt)
             all_areas.append(cnt)
+            points.append([x,y,w,h])
     # end = time()
     # print("GET CONTOUR AREA:",end-start)
-    return all_areas
+    return all_areas,points
+    # print(len(all_areas))
+    # return all_areas
+
 
 def draw_contours(image_array,dem_file,dtm_file,y1,x1,y2,x2):
     # start = time()
@@ -124,10 +135,8 @@ def draw_contours(image_array,dem_file,dtm_file,y1,x1,y2,x2):
     greens = get_trees(image_array,y1,x1,y2,x2)
     area = process_area(dem_file,dtm_file,y1,x1,y2,x2,greens)
     # print(y1,x1,y2,x2)
-    import numpy as np
     area = np.array(area)
-    from PIL import Image
-    import matplotlib.pyplot as plt
+
     formatted = (area * 255 / np.max(area)).astype('uint8')
     img = Image.fromarray(formatted)
     image = np.array(img)
@@ -136,13 +145,16 @@ def draw_contours(image_array,dem_file,dtm_file,y1,x1,y2,x2):
     _, binary = cv2.threshold(gray, 1, 255, cv2.THRESH_BINARY_INV)
     contours, hierarchy = cv2.findContours(binary, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
     image_pixel_count = image.shape[0]*image.shape[1]
-    # sorted_contours= sorted(contours, key=cv2.contourArea, reverse= True)
-    contour_list = get_contour_areas(contours,image_pixel_count)
+    sorted_contours= sorted(contours, key=cv2.contourArea, reverse= True)
+    contour_list,points_list = get_contour_areas(sorted_contours,image_pixel_count)
+    # contour_list = get_contour_areas(sorted_contours,image_pixel_count)
     # image = cv2.drawContours(image, get_contour_areas(contours), -1, (0, 255, 0), 2)
     # print(contour_list)
     # end = time()
     # print("DRAW CONTOURS:",end-start)
     image = cv2.drawContours(image,contour_list , -1, (0, 255, 0), 2)
+    for points in points_list:
+        cv2.rectangle(image,(points[0],points[1]),(points[0]+points[2],points[1]+points[3]),(0,255,0),2)
     plt.imshow(image)
     plt.show()
     return len(contour_list)

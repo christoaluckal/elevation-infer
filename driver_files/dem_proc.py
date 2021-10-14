@@ -12,7 +12,7 @@ def get_lon_at(affine_transform,x_coord,y_coord):
     # print("LAT LON:",lon,lat)
     return lon,lat
 
-def process_area(dem_file,dtm_file,y1,x1,y2,x2):
+def process_area(dem_file,dtm_file,y1,x1,y2,x2,greens):
     demdata = gdal.Open(str(dem_file))
     dem_band = demdata.GetRasterBand(1)
     dem_area = dem_band.ReadAsArray(x1,y1,x2-x1,y2-y1)
@@ -26,9 +26,12 @@ def process_area(dem_file,dtm_file,y1,x1,y2,x2):
     for height in range(y2-y1):
         temp = []
         for width in range(x2-x1):
-            height_val = dem_area[height][width]-dtm_area[height][width]
-            if height_val > 1:
-                temp.append(dem_area[height][width]-dtm_area[height][width])
+            if np.all(greens[height][width]!=0):
+                height_val = dem_area[height][width]-dtm_area[height][width]
+                if height_val > 1:
+                    temp.append(dem_area[height][width]-dtm_area[height][width])
+                else:
+                    temp.append(0)
             else:
                 temp.append(0)
         area_diff.append(temp)
@@ -75,20 +78,39 @@ def process_dtm(dtm_file,x_min,y_min):
     return dtm_area[0][0]
 
 
+def get_trees(image_array,y1,x1,y2,x2):
+    low_green = np.array([36, 20, 20])
+    high_green = np.array([100, 255,255])
+    # greent_test = np.array([[[197,200,147]]],np.uint8)
+    # greent_test = cv2.cvtColor(greent_test,cv2.COLOR_BGR2HSV)
+    # print(greent_test)
+    imgHSV = cv2.cvtColor(image_array, cv2.COLOR_BGR2HSV)
+    # create the Mask
+    mask = cv2.inRange(imgHSV, low_green, high_green)
+    # inverse mask
+    mask = 255-mask
+    # print(mask)
+    mask = cv2.bitwise_and(image_array, image_array, mask=mask)
+    # cv2.imshow('a',res)
+    # cv2.waitKey(0)
+    return mask
+
 def get_contour_areas(contours,tot_pixel):
 
     all_areas= []
     for cnt in contours:
         area = cv2.contourArea(cnt)
-        if area > tot_pixel*0.18 and area < tot_pixel*0.95:
+        if area > tot_pixel*0.05 and area < tot_pixel*0.95:
             print(area)
             all_areas.append(cnt)
 
     return all_areas
 
-def draw_contours(dem_file,dtm_file,y1,x1,y2,x2):
-    area = process_area(dem_file,dtm_file,y1,x1,y2,x2)
-    print(y1,x1,y2,x2)
+def draw_contours(image_array,dem_file,dtm_file,y1,x1,y2,x2):
+    # get green colors here
+    greens = get_trees(image_array,y1,x1,y2,x2)
+    area = process_area(dem_file,dtm_file,y1,x1,y2,x2,greens)
+    # print(y1,x1,y2,x2)
     import numpy as np
     area = np.array(area)
     from PIL import Image
@@ -112,7 +134,7 @@ def draw_contours(dem_file,dtm_file,y1,x1,y2,x2):
     return len(contour_list)
 
 # This function takes the DEM,DTM, point list and the mode of height selection and returns a dictionary with the (X,Y)(X+1,Y+1) as key and (Lat,Lon),Relative height as values
-def process_model(dem_file,dtm_file,bounding_list,mode):
+def process_model(image_array,dem_file,dtm_file,bounding_list,mode):
     loc_data = {}
     demdata = gdal.Open(str(dem_file))
     # dtmdata = gdal.Open(str(dtm_file))
@@ -120,7 +142,8 @@ def process_model(dem_file,dtm_file,bounding_list,mode):
     dem_band = demdata.GetRasterBand(1)
     for x in bounding_list:
         x_min,y_min,x_max,y_max = int(x[0]),int(x[1]),int(x[2]),int(x[3])
-        contour_length = draw_contours(dem_file,dtm_file,y_min,x_min,y_max,x_max)
+        small_img = image_array[y_min:y_max,x_min:x_max]
+        contour_length = draw_contours(small_img,dem_file,dtm_file,y_min,x_min,y_max,x_max)
         if contour_length > 0:
             if mode == 'quantile':
                 dem_area = dem_band.ReadAsArray(x_min,y_min,x_max-x_min,y_max-y_min)

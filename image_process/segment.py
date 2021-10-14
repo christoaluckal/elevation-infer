@@ -10,14 +10,14 @@ multi_range = (13492,5884,14988,8004)
 none_range = (13312,8164,13964,8884)
 diag_range = (9360,6852,10030,8194)
 
-# og_img = cv2.imread('/home/caluckal/Desktop/Github/elevation-infer/929_offset_ortho.jpg')
+og_img = cv2.imread('/home/caluckal/Desktop/Github/elevation-infer/color_ortho.jpg')
 
-# good_img = og_img[good_range[0]:good_range[2],good_range[1]:good_range[3]]
+good_img = og_img[good_range[0]:good_range[2],good_range[1]:good_range[3]]
 # partial_img = og_img[partial_range[0]:partial_range[2],partial_range[1]:partial_range[3]]
 # multi_img = og_img[multi_range[0]:multi_range[2],multi_range[1]:multi_range[3]]
 # none_img = og_img[none_range[0]:none_range[2],none_range[1]:none_range[3]]
 # diag_img = og_img[diag_range[0]:diag_range[2],diag_range[1]:diag_range[3]]
-
+# cv2.imwrite('/home/caluckal/Desktop/Github/elevation-infer/good_color.png',good_img)
 
 def get_contour_areas(contours,tot_pixel):
 

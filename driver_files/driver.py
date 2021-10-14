@@ -116,6 +116,12 @@ def draw_rectangle_with_drag(event, x, y, flags, param):
     elif event == cv2.EVENT_MOUSEMOVE:
         fx = x
         fy = y
+
+    elif event == cv2.EVENT_MOUSEWHEEL:
+        pass
+
+    elif event == cv2.EVENT_MBUTTONDOWN:
+        pass
             
     else:
         cv2.line(img_disp, pt1 =(ix, iy),
@@ -150,7 +156,7 @@ while True:
         reversed = reversenomarlize(normalized,img_og.shape)
         # Check contour numbers
 
-        loc_data = dem_proc.process_model(dem_file,dtm_file,reversed,'quantile')
+        loc_data = dem_proc.process_model(img_og,dem_file,dtm_file,reversed,'quantile')
         # draw_on_image(dummy_img,loc_data)
         for x,y in loc_data.items():
             print(x,y)

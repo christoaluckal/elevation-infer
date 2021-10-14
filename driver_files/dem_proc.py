@@ -4,6 +4,7 @@ import numpy as np
 import affine
 import sys
 import cv2
+from time import time
 sys.path.append('.')
 # from image_process.segment import draw_contours
 # This function takes an (X,Y) coordinate with the affine transform matrix and returns latitude and longitude
@@ -13,6 +14,7 @@ def get_lon_at(affine_transform,x_coord,y_coord):
     return lon,lat
 
 def process_area(dem_file,dtm_file,y1,x1,y2,x2,greens):
+    # start = time()
     demdata = gdal.Open(str(dem_file))
     dem_band = demdata.GetRasterBand(1)
     dem_area = dem_band.ReadAsArray(x1,y1,x2-x1,y2-y1)
@@ -29,13 +31,16 @@ def process_area(dem_file,dtm_file,y1,x1,y2,x2,greens):
             if np.all(greens[height][width]!=0):
                 height_val = dem_area[height][width]-dtm_area[height][width]
                 if height_val > 1:
-                    temp.append(dem_area[height][width]-dtm_area[height][width])
+                    # temp.append(dem_area[height][width]-dtm_area[height][width])
+                    temp.append(1)
+
                 else:
                     temp.append(0)
             else:
                 temp.append(0)
         area_diff.append(temp)
-
+    # end = time()
+    # print("Process Area:",end-start)
     return area_diff
 
 # This is the inverse of getLonLat
@@ -55,6 +60,7 @@ def process_dem_point(affine_transform,x_min,y_min,array):
 # This function ONLY computes the average height and not the location where that average exists, so the selected point and the point at which
 # the average exists are different
 def process_dem_quantile(affine_transform,x_min,y_min,array,threshold_x,threshold_y):
+    # start = time()
     lon,lat = get_lon_at(affine_transform,x_min,y_min) # TODO CHANGE THIS TO GET THE coordinates
     height_vals = []
     for i in range(threshold_x):
@@ -68,6 +74,8 @@ def process_dem_quantile(affine_transform,x_min,y_min,array,threshold_x,threshol
     mask = np.where((height_vals > q1) & (height_vals<q3))
     # height_val = np.average(np.array(height_vals[mask]))
     height_val = np.average(np.array(height_vals[mask]))
+    # end = time()
+    # print("DEM QUARTILE:",end-start)
     return height_val,(lon,lat)
 
 # Same as DEM, we process dtm to get the terrain height
@@ -79,6 +87,7 @@ def process_dtm(dtm_file,x_min,y_min):
 
 
 def get_trees(image_array,y1,x1,y2,x2):
+    # start = time()
     low_green = np.array([36, 20, 20])
     high_green = np.array([100, 255,255])
     # greent_test = np.array([[[197,200,147]]],np.uint8)
@@ -93,20 +102,24 @@ def get_trees(image_array,y1,x1,y2,x2):
     mask = cv2.bitwise_and(image_array, image_array, mask=mask)
     # cv2.imshow('a',res)
     # cv2.waitKey(0)
+    # end = time()
+    # print("GET TREES:",end-start)
     return mask
 
 def get_contour_areas(contours,tot_pixel):
-
+    # start = time()
     all_areas= []
     for cnt in contours:
         area = cv2.contourArea(cnt)
         if area > tot_pixel*0.05 and area < tot_pixel*0.95:
-            print(area)
+            # print(area)
             all_areas.append(cnt)
-
+    # end = time()
+    # print("GET CONTOUR AREA:",end-start)
     return all_areas
 
 def draw_contours(image_array,dem_file,dtm_file,y1,x1,y2,x2):
+    # start = time()
     # get green colors here
     greens = get_trees(image_array,y1,x1,y2,x2)
     area = process_area(dem_file,dtm_file,y1,x1,y2,x2,greens)
@@ -114,7 +127,6 @@ def draw_contours(image_array,dem_file,dtm_file,y1,x1,y2,x2):
     import numpy as np
     area = np.array(area)
     from PIL import Image
-    import numpy as np
     import matplotlib.pyplot as plt
     formatted = (area * 255 / np.max(area)).astype('uint8')
     img = Image.fromarray(formatted)
@@ -128,6 +140,8 @@ def draw_contours(image_array,dem_file,dtm_file,y1,x1,y2,x2):
     contour_list = get_contour_areas(contours,image_pixel_count)
     # image = cv2.drawContours(image, get_contour_areas(contours), -1, (0, 255, 0), 2)
     # print(contour_list)
+    # end = time()
+    # print("DRAW CONTOURS:",end-start)
     image = cv2.drawContours(image,contour_list , -1, (0, 255, 0), 2)
     plt.imshow(image)
     plt.show()
@@ -135,12 +149,14 @@ def draw_contours(image_array,dem_file,dtm_file,y1,x1,y2,x2):
 
 # This function takes the DEM,DTM, point list and the mode of height selection and returns a dictionary with the (X,Y)(X+1,Y+1) as key and (Lat,Lon),Relative height as values
 def process_model(image_array,dem_file,dtm_file,bounding_list,mode):
+    # start = time()
     loc_data = {}
     demdata = gdal.Open(str(dem_file))
     # dtmdata = gdal.Open(str(dtm_file))
     dem_affine_transform = affine.Affine.from_gdal(*demdata.GetGeoTransform())
     dem_band = demdata.GetRasterBand(1)
     for x in bounding_list:
+        # print('\n\n\n')
         x_min,y_min,x_max,y_max = int(x[0]),int(x[1]),int(x[2]),int(x[3])
         small_img = image_array[y_min:y_max,x_min:x_max]
         contour_length = draw_contours(small_img,dem_file,dtm_file,y_min,x_min,y_max,x_max)
@@ -156,6 +172,8 @@ def process_model(image_array,dem_file,dtm_file,bounding_list,mode):
         else:
             loc_data["{},{},{},{}".format(x_min,y_min,x_max,y_max)] = [-9999,-9999,-9999,-9999,-9999]
 
+    # end = time()
+    # print("PROCESS MODEL:",end-start)
     return loc_data
 
 

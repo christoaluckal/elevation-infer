@@ -77,8 +77,6 @@ def process_dem_quantile(affine_transform,x_min,y_min,array,threshold_x,threshol
     height_vals = reject_outliers(np.array(sorted(height_vals)),2)
     q1 = np.percentile(height_vals,25)
     q3 = np.percentile(height_vals,95)
-    plt.hist(height_vals)
-    plt.show()
     # height_vals = np.array(height_vals)
 
     mask = ((height_vals > q1) & (height_vals<q3))
@@ -166,11 +164,13 @@ def draw_contours(image_array,dem_file,dtm_file,y1,x1,y2,x2):
     # end = time()
     # print("DRAW CONTOURS:",end-start)
     # image = cv2.drawContours(image,contour_list , -1, (0, 255, 0), 2)
+    areas = []
     for points in points_list:
         cv2.rectangle(image,(points[0],points[1]),(points[0]+points[2],points[1]+points[3]),(0,255,0),2)
+        areas.append(area[points[1]:points[1]+points[3],points[0]:points[0]+points[2]])
     plt.imshow(image)
     plt.show()
-    return len(contour_list),area
+    return len(contour_list),areas,points_list
 
 # This function takes the DEM,DTM, point list and the mode of height selection and returns a dictionary with the (X,Y)(X+1,Y+1) as key and (Lat,Lon),Relative height as values
 def process_model(image_array,dem_file,dtm_file,bounding_list,mode):
@@ -180,24 +180,25 @@ def process_model(image_array,dem_file,dtm_file,bounding_list,mode):
     # dtmdata = gdal.Open(str(dtm_file))
     dem_affine_transform = affine.Affine.from_gdal(*demdata.GetGeoTransform())
     dem_band = demdata.GetRasterBand(1)
-    for x in bounding_list:
+    for points in bounding_list:
         # print('\n\n\n')
-        x_min,y_min,x_max,y_max = int(x[0]),int(x[1]),int(x[2]),int(x[3])
+        x_min,y_min,x_max,y_max = int(points[0]),int(points[1]),int(points[2]),int(points[3])
         small_img = image_array[y_min:y_max,x_min:x_max]
-        contour_length,area = draw_contours(small_img,dem_file,dtm_file,y_min,x_min,y_max,x_max)
-        if contour_length > 0:
+        contour_length,area,points_list = draw_contours(small_img,dem_file,dtm_file,y_min,x_min,y_max,x_max)
+        for contours in range(contour_length):
+            x,y,w,h = points_list[contours]
             if mode == 'quantile':
                 # dem_area = dem_band.ReadAsArray(x_min,y_min,x_max-x_min,y_max-y_min)
-                dem_height,lat_lon,positions = process_dem_quantile(dem_affine_transform,x_min,y_min,area,x_max-x_min,y_max-y_min)
-                x_dtm = int(positions[0])
-                y_dtm = int(positions[1])
+                # print(w,h,len(area[contours]),len(area[contours][0]))
+                dem_height,lat_lon,positions = process_dem_quantile(dem_affine_transform,x_min+x,y_min+y,area[contours],w,h)
+                # x_dtm = int(positions[0])
+                # y_dtm = int(positions[1])
             else:
                 dem_area = dem_band.ReadAsArray(x_min,y_min,1,1) # Band is (X,Y), # GetLonLat is (X,Y)
                 dem_height,lat_lon = process_dem_point(dem_affine_transform,x_min,y_min,dem_area)
-            dtm_height = process_dtm(dtm_file,x_dtm,y_dtm)
-            loc_data["{},{},{},{}".format(x_min,y_min,x_max,y_max)] = [lat_lon,dem_height,dtm_height,x_min,y_min]
-        else:
-            loc_data["{},{},{},{}".format(x_min,y_min,x_max,y_max)] = [-9999,-9999,-9999,-9999,-9999]
+            # dtm_height = process_dtm(dtm_file,x_dtm,y_dtm)
+            loc_data["{},{},{},{}".format(x_min+x,y_min+y,x_min+w,y_min+h)] = [lat_lon,dem_height]
+
 
     # end = time()
     # print("PROCESS MODEL:",end-start)

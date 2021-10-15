@@ -168,8 +168,8 @@ def draw_contours(image_array,dem_file,dtm_file,y1,x1,y2,x2):
     for points in points_list:
         cv2.rectangle(image,(points[0],points[1]),(points[0]+points[2],points[1]+points[3]),(0,255,0),2)
         areas.append(area[points[1]:points[1]+points[3],points[0]:points[0]+points[2]])
-    plt.imshow(image)
-    plt.show()
+    # plt.imshow(image)
+    # plt.show()
     return len(contour_list),areas,points_list
 
 # This function takes the DEM,DTM, point list and the mode of height selection and returns a dictionary with the (X,Y)(X+1,Y+1) as key and (Lat,Lon),Relative height as values
@@ -182,10 +182,13 @@ def process_model(image_array,dem_file,dtm_file,bounding_list,mode):
     dem_band = demdata.GetRasterBand(1)
     for points in bounding_list:
         # print('\n\n\n')
+        start1 = time()
+
         x_min,y_min,x_max,y_max = int(points[0]),int(points[1]),int(points[2]),int(points[3])
         small_img = image_array[y_min:y_max,x_min:x_max]
         contour_length,area,points_list = draw_contours(small_img,dem_file,dtm_file,y_min,x_min,y_max,x_max)
         for contours in range(contour_length):
+            start2 = time()
             x,y,w,h = points_list[contours]
             if mode == 'quantile':
                 # dem_area = dem_band.ReadAsArray(x_min,y_min,x_max-x_min,y_max-y_min)
@@ -198,10 +201,13 @@ def process_model(image_array,dem_file,dtm_file,bounding_list,mode):
                 dem_height,lat_lon = process_dem_point(dem_affine_transform,x_min,y_min,dem_area)
             # dtm_height = process_dtm(dtm_file,x_dtm,y_dtm)
             loc_data["{},{},{},{}".format(x_min+x,y_min+y,x_min+w,y_min+h)] = [lat_lon,dem_height]
-
-
+            end2 = time()
+            print((x_max-x_min)*(y_max-y_min),':{}'.format(end2-start2))
+        end1 = time()
+        print("{}".format(end1-start1),'\n\n')
     # end = time()
     # print("PROCESS MODEL:",end-start)
+    print("ENDED")
     return loc_data
 
 

@@ -33,8 +33,8 @@ def process_area(dem_file,dtm_file,y1,x1,y2,x2,greens):
             if np.all(greens[height][width]!=0):
                 height_val = dem_area[height][width]-dtm_area[height][width]
                 if height_val > 1:
-                    # temp.append(dem_area[height][width]-dtm_area[height][width])
-                    temp.append(1)
+                    temp.append(dem_area[height][width]-dtm_area[height][width])
+                    # temp.append(1)
 
                 else:
                     temp.append(0)
@@ -44,6 +44,9 @@ def process_area(dem_file,dtm_file,y1,x1,y2,x2,greens):
     # end = time()
     # print("Process Area:",end-start)
     return area_diff
+
+def reject_outliers(data, m=2):
+    return data[abs(data - np.mean(data)) < m * np.std(data)]
 
 # This is the inverse of getLonLat
 def get_xy(affine_transform,lat,lon):
@@ -71,19 +74,23 @@ def process_dem_quantile(affine_transform,x_min,y_min,array,threshold_x,threshol
         for j in range(threshold_y):
             height_vals.append(array[j][i])
 
-    height_vals = sorted(height_vals)
+    height_vals = reject_outliers(np.array(sorted(height_vals)),2)
     q1 = np.percentile(height_vals,25)
-    q3 = np.percentile(height_vals,75)
-
-    height_vals = np.array(height_vals)
+    q3 = np.percentile(height_vals,95)
+    plt.hist(height_vals)
+    plt.show()
+    # height_vals = np.array(height_vals)
 
     mask = ((height_vals > q1) & (height_vals<q3))
-    # height_val = np.average(np.array(height_vals[mask]))
+    height_val = np.average(np.array(height_vals[mask]))
     height_vals = height_vals[mask]
-    height_check = height_vals[len(height_vals)//2]
+    # height_check = height_vals[len(height_vals)//2]
+    height_check = np.max(height_vals)
     positions = np.where(array == height_check)
+    # print(q1,q3,height_check,positions)
+    # print(positions,x_min+positions[1][0],y_min+positions[0][0])
     lon,lat = get_lon_at(affine_transform,x_min+positions[1][0],y_min+positions[0][0])
-    return height_check,(lon,lat)
+    return height_check,(lon,lat),(x_min+positions[1][0],y_min+positions[0][0])
     
 # Same as DEM, we process dtm to get the terrain height
 def process_dtm(dtm_file,x_min,y_min):
@@ -158,12 +165,12 @@ def draw_contours(image_array,dem_file,dtm_file,y1,x1,y2,x2):
     # print(contour_list)
     # end = time()
     # print("DRAW CONTOURS:",end-start)
-    image = cv2.drawContours(image,contour_list , -1, (0, 255, 0), 2)
+    # image = cv2.drawContours(image,contour_list , -1, (0, 255, 0), 2)
     for points in points_list:
         cv2.rectangle(image,(points[0],points[1]),(points[0]+points[2],points[1]+points[3]),(0,255,0),2)
     plt.imshow(image)
     plt.show()
-    return len(contour_list)
+    return len(contour_list),area
 
 # This function takes the DEM,DTM, point list and the mode of height selection and returns a dictionary with the (X,Y)(X+1,Y+1) as key and (Lat,Lon),Relative height as values
 def process_model(image_array,dem_file,dtm_file,bounding_list,mode):
@@ -177,15 +184,17 @@ def process_model(image_array,dem_file,dtm_file,bounding_list,mode):
         # print('\n\n\n')
         x_min,y_min,x_max,y_max = int(x[0]),int(x[1]),int(x[2]),int(x[3])
         small_img = image_array[y_min:y_max,x_min:x_max]
-        contour_length = draw_contours(small_img,dem_file,dtm_file,y_min,x_min,y_max,x_max)
+        contour_length,area = draw_contours(small_img,dem_file,dtm_file,y_min,x_min,y_max,x_max)
         if contour_length > 0:
             if mode == 'quantile':
-                dem_area = dem_band.ReadAsArray(x_min,y_min,x_max-x_min,y_max-y_min)
-                dem_height,lat_lon = process_dem_quantile(dem_affine_transform,x_min,y_min,dem_area,x_max-x_min,y_max-y_min)
+                # dem_area = dem_band.ReadAsArray(x_min,y_min,x_max-x_min,y_max-y_min)
+                dem_height,lat_lon,positions = process_dem_quantile(dem_affine_transform,x_min,y_min,area,x_max-x_min,y_max-y_min)
+                x_dtm = int(positions[0])
+                y_dtm = int(positions[1])
             else:
                 dem_area = dem_band.ReadAsArray(x_min,y_min,1,1) # Band is (X,Y), # GetLonLat is (X,Y)
                 dem_height,lat_lon = process_dem_point(dem_affine_transform,x_min,y_min,dem_area)
-            dtm_height = process_dtm(dtm_file,x_min,y_min)
+            dtm_height = process_dtm(dtm_file,x_dtm,y_dtm)
             loc_data["{},{},{},{}".format(x_min,y_min,x_max,y_max)] = [lat_lon,dem_height,dtm_height,x_min,y_min]
         else:
             loc_data["{},{},{},{}".format(x_min,y_min,x_max,y_max)] = [-9999,-9999,-9999,-9999,-9999]

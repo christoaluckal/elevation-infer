@@ -7,7 +7,7 @@ image_map = {} # This data structure is used to store coordinates of each sub-pa
 # Calculate the percent of white pixels in the image and reject if over threshold
 def sampleImage(img):
     height,width,channels = img.shape
-    n_white_pix = np.sum(img == 255)
+    n_white_pix = np.sum(img == 0)
     n_white_pix = n_white_pix //3
     total_pixels = height*width
     if(n_white_pix/total_pixels > 0.96):

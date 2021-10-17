@@ -6,13 +6,25 @@ import sys
 # Invocation is python3 driver_point.py <JPG for clicking> <DEM file> <DTM file>
 args = sys.argv[1:]
 
-if len(args) < 3:
+if len(args) < 4:
     print("Missing files")
     exit()
 else:
     ortho_file = args[0]
     dem_file = args[1]
     dtm_file = args[2]
+    contour_flag = args[3]
+    if contour_flag == "custom":
+        contour_1 = float(input('Enter the min. contour area percentage:'))
+        contour_2 = float(input('Enter the max. contour area percentage:'))
+        percentile_1 = float(input('Enter the min quantile cutoff:'))
+        percentile_2 = float(input('Enter the max. quantile cutoff:'))
+    else:
+        contour_1 = 0.6
+        contour_2 = 95
+        percentile_1 = 25
+        percentile_1 = 95
+        
 
 img_og = cv2.imread(ortho_file)
 img_og_shape = img_og.shape
@@ -156,7 +168,7 @@ while True:
         reversed = reversenomarlize(normalized,img_og.shape)
         # Check contour numbers
 
-        loc_data = dem_proc.process_model(img_og,dem_file,dtm_file,reversed,'quantile')
+        loc_data = dem_proc.process_model(img_og,dem_file,dtm_file,reversed,'quantile',contour_1,contour_2,percentile_1,percentile_2)
         # draw_on_image(dummy_img,loc_data)
         for x,y in loc_data.items():
             print(x,y)

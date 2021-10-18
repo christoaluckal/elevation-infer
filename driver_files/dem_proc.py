@@ -7,6 +7,7 @@ import cv2
 from time import time
 from PIL import Image
 import matplotlib.pyplot as plt
+import selector
 sys.path.append('.')
 # from image_process.segment import draw_contours
 # This function takes an (X,Y) coordinate with the affine transform matrix and returns latitude and longitude
@@ -152,6 +153,7 @@ def draw_contours(image_array,dem_file,dtm_file,y1,x1,y2,x2,contour_1,contour_2)
     img = Image.fromarray(formatted)
     image = np.array(img)
     image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+    image_rgb = cv2.cvtColor(image_array,cv2.COLOR_BGR2RGB)
     gray = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
     _, binary = cv2.threshold(gray, 1, 255, cv2.THRESH_BINARY_INV)
     contours, hierarchy = cv2.findContours(binary, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
@@ -163,14 +165,14 @@ def draw_contours(image_array,dem_file,dtm_file,y1,x1,y2,x2,contour_1,contour_2)
     # print(contour_list)
     # end = time()
     # print("DRAW CONTOURS:",end-start)
-    image = cv2.drawContours(image,contour_list , -1, (0, 255, 0), 2)
+    image_rgb = cv2.drawContours(image_rgb,contour_list , -1, (0, 255, 0), 2)
     areas = []
     for points in points_list:
-        cv2.rectangle(image,(points[0],points[1]),(points[0]+points[2],points[1]+points[3]),(0,255,0),2)
+        cv2.rectangle(image_rgb,(points[0],points[1]),(points[0]+points[2],points[1]+points[3]),(0,255,0),2)
         areas.append(area[points[1]:points[1]+points[3],points[0]:points[0]+points[2]])
-    plt.imshow(image)
-    plt.show()
-    return len(contour_list),areas,points_list
+    # plt.imshow(image_rgb)
+    # plt.show()
+    return len(contour_list),areas,points_list,image_rgb
 
 # This function takes the DEM,DTM, point list and the mode of height selection and returns a dictionary with the (X,Y)(X+1,Y+1) as key and (Lat,Lon),Relative height as values
 def process_model(image_array,dem_file,dtm_file,bounding_list,mode,contour_1,contour_2,percentile_1,percentile_2):
@@ -188,29 +190,31 @@ def process_model(image_array,dem_file,dtm_file,bounding_list,mode,contour_1,con
 
         x_min,y_min,x_max,y_max = int(points[0]),int(points[1]),int(points[2]),int(points[3])
         small_img = image_array[y_min:y_max,x_min:x_max]
-        contour_length,area,points_list = draw_contours(small_img,dem_file,dtm_file,y_min,x_min,y_max,x_max,contour_1,contour_2)
-        print("There are {} buildings".format(contour_length))
+        contour_length,area,points_list,image_rgb = draw_contours(small_img,dem_file,dtm_file,y_min,x_min,y_max,x_max,contour_1,contour_2)
+        print("There are {} building(s) in the region".format(contour_length))
+        selected_coords = selector.selector(image_rgb)
         for contours in range(contour_length):
-            start2 = time()
-            x,y,w,h = points_list[contours]
-            if mode == 'quantile':
-                # dem_area = dem_band.ReadAsArray(x_min,y_min,x_max-x_min,y_max-y_min)
-                # print(w,h,len(area[contours]),len(area[contours][0]))
-                dem_height,lat_lon,positions = process_dem_quantile(dem_affine_transform,x_min+x,y_min+y,area[contours],w,h,percentile_1,percentile_2)
-                # x_dtm = int(positions[0])
-                # y_dtm = int(positions[1])
-            else:
-                dem_area = dem_band.ReadAsArray(x_min,y_min,1,1) # Band is (X,Y), # GetLonLat is (X,Y)
-                dem_height,lat_lon = process_dem_point(dem_affine_transform,x_min,y_min,dem_area)
-            # dtm_height = process_dtm(dtm_file,x_dtm,y_dtm)
-            loc_data["{},{},{},{}".format(x_min+x,y_min+y,x_min+w,y_min+h)] = [lat_lon,dem_height]
-            end2 = time()
-            # print((x_max-x_min)*(y_max-y_min),':{}'.format(end2-start2))
+            for coords in selected_coords:
+                x,y,w,h = points_list[contours]
+                # print(x,y,x+w,y+h,coords,contours)
+                if coords[0] > x and coords[0] < x+w and coords[1] > y and coords[1] < y+h:
+                    if mode == 'quantile':
+                        # dem_area = dem_band.ReadAsArray(x_min,y_min,x_max-x_min,y_max-y_min)
+                        # print(w,h,len(area[contours]),len(area[contours][0]))
+                        dem_height,lat_lon,positions = process_dem_quantile(dem_affine_transform,x_min+x,y_min+y,area[contours],w,h,percentile_1,percentile_2)
+                        # x_dtm = int(positions[0])
+                        # y_dtm = int(positions[1])
+                    else:
+                        dem_area = dem_band.ReadAsArray(x_min,y_min,1,1) # Band is (X,Y), # GetLonLat is (X,Y)
+                        dem_height,lat_lon = process_dem_point(dem_affine_transform,x_min,y_min,dem_area)
+                    # dtm_height = process_dtm(dtm_file,x_dtm,y_dtm)
+                    loc_data["{},{},{},{}".format(x_min+x,y_min+y,x_min+w,y_min+h)] = [lat_lon,dem_height]
+                # print((x_max-x_min)*(y_max-y_min),':{}'.format(end2-start2))
         end1 = time()
         print("{}".format(end1-start1),'\n\n')
     # end = time()
     # print("PROCESS MODEL:",end-start)
-    print("ENDED")
+    # print("ENDED")
     return loc_data
 
 

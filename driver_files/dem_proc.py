@@ -138,16 +138,21 @@ def get_trees(image_array,y1,x1,y2,x2):
     # greent_test = cv2.cvtColor(greent_test,cv2.COLOR_BGR2HSV)
     # print(greent_test)
     imgHSV = cv2.cvtColor(image_array, cv2.COLOR_BGR2HSV)
+    #cv2.imwrite('image_hsv.jpg',imgHSV)
+    
     # create the Mask
     mask = cv2.inRange(imgHSV, low_green, high_green)
+    #cv2.imwrite('init_mask.jpg',mask)
     # inverse mask
     mask = 255-mask
     # print(mask)
+    #cv2.imwrite('invert_mask.jpg',mask)
     mask = cv2.bitwise_and(image_array, image_array, mask=mask)
     # cv2.imshow('a',res)
     # cv2.waitKey(0)
     # end = time()
     # print("GET TREES:",end-start)
+    #cv2.imwrite('image_with_mask.jpg',mask)
     return mask
 
 def get_contour_areas(contours,tot_pixel,contour_1,contour_2):
@@ -181,11 +186,13 @@ def draw_contours(image_array,dem_file,dtm_file,y1,x1,y2,x2,contour_1,contour_2)
     area = np.array(area)
 
     formatted = (area * 255 / np.max(area)).astype('uint8')
+    #cv2.imwrite('formatted.jpg',formatted)
     img = Image.fromarray(formatted)
     image = np.array(img)
     image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
     image_rgb = cv2.cvtColor(image_array,cv2.COLOR_BGR2RGB)
     gray = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
+    #cv2.imwrite('gray_scaled.jpg',gray)
     _, binary = cv2.threshold(gray, 1, 255, cv2.THRESH_BINARY_INV)
     contours, hierarchy = cv2.findContours(binary, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
     image_pixel_count = image.shape[0]*image.shape[1]
@@ -197,6 +204,8 @@ def draw_contours(image_array,dem_file,dtm_file,y1,x1,y2,x2,contour_1,contour_2)
     # end = time()
     # print("DRAW CONTOURS:",end-start)
     image_rgb = cv2.drawContours(image_rgb,contour_list , -1, (0, 255, 0), 2)
+    image= cv2.drawContours(image,contour_list , -1, (0, 255, 0), 2)
+    #cv2.imwrite('bin_contour.jpg',image)
     areas = []
     for points in points_list:
         cv2.rectangle(image_rgb,(points[0],points[1]),(points[0]+points[2],points[1]+points[3]),(0,255,0),2)
@@ -221,6 +230,7 @@ def process_model(image_array,dem_file,dtm_file,bounding_list,mode,contour_1,con
 
         x_min,y_min,x_max,y_max = int(points[0]),int(points[1]),int(points[2]),int(points[3])
         small_img = image_array[y_min:y_max,x_min:x_max]
+        #cv2.imwrite('small_image.jpg',small_img)
         contour_length,area,points_list,image_rgb = draw_contours(small_img,dem_file,dtm_file,y_min,x_min,y_max,x_max,contour_1,contour_2)
         print("There are {} building(s) in the region".format(contour_length))
         selected_coords = selector.selector(image_rgb)

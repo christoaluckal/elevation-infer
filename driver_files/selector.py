@@ -16,6 +16,7 @@ def selector(image_og):
     cv2.setMouseCallback("Title of Popup Window", 
                         draw_rectangle_with_drag)
     img_disp = cv2.cvtColor(img_disp,cv2.COLOR_BGR2RGB)
+    #cv2.imwrite('contour_op_selection.jpg',img_disp)
     while True:
         cv2.imshow("Title of Popup Window", img_disp)
         

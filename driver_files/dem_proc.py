@@ -31,10 +31,10 @@ def process_area(dem_file,dtm_file,y1,x1,y2,x2,greens):
         temp = []
         # counter_x = 0
         for width in range(x2-x1):
-            if np.all(greens[height][width]):
+            if (greens[height][width][0] and greens[height][width][1] and greens[height][width][2]):
                 height_val = dem_area[height][width]-dtm_area[height][width]
                 if height_val > 1:
-                    temp.append(dem_area[height][width]-dtm_area[height][width])
+                    temp.append(height_val)
                     # temp.append(1)
                 else:
                     temp.append(0)
@@ -45,6 +45,7 @@ def process_area(dem_file,dtm_file,y1,x1,y2,x2,greens):
         # print(counter_y,counter_x)
         # counter_y+=1
     return area_diff
+
 
 def reject_outliers(data, m=2):
     return data[abs(data - np.mean(data)) < m * np.std(data)]
@@ -142,7 +143,6 @@ def get_contour_areas(contours,tot_pixel,contour_1,contour_2):
 
 
 def draw_contours(image_array,dem_file,dtm_file,y1,x1,y2,x2,contour_1,contour_2):
-    # start = time()
     # get green colors here
     greens = get_trees(image_array,y1,x1,y2,x2)
     area = process_area(dem_file,dtm_file,y1,x1,y2,x2,greens)

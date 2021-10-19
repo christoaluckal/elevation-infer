@@ -16,6 +16,37 @@ def get_lon_at(affine_transform,x_coord,y_coord):
     # print("LAT LON:",lon,lat)
     return lon,lat
 
+def process_area_subtract(dem_file,dtm_file,y1,x1,y2,x2,greens):
+    demdata = gdal.Open(str(dem_file))
+    dem_band = demdata.GetRasterBand(1)
+    dem_area = dem_band.ReadAsArray(x1,y1,x2-x1,y2-y1)
+    del dem_band
+    dtmdata = gdal.Open(str(dtm_file))
+    dtm_band = dtmdata.GetRasterBand(1)
+    dtm_area = dtm_band.ReadAsArray(x1,y1,x2-x1,y2-y1)
+    del dtm_band
+    area_diff = []
+    # counter_x,counter_y = 0,0
+    subtract_array = dem_area-dtm_area
+    for height in range(y2-y1):
+        temp = []
+        # counter_x = 0
+        for width in range(x2-x1):
+            if (greens[height][width][0] and greens[height][width][1] and greens[height][width][2]):
+                height_val = subtract_array[height][width]
+                if height_val > 1:
+                    temp.append(height_val)
+                    # temp.append(1)
+                else:
+                    temp.append(0)
+            else:
+                temp.append(0)
+            # counter_x+=1
+        area_diff.append(temp)
+        # print(counter_y,counter_x)
+        # counter_y+=1
+    return area_diff
+
 def process_area(dem_file,dtm_file,y1,x1,y2,x2,greens):
     demdata = gdal.Open(str(dem_file))
     dem_band = demdata.GetRasterBand(1)
@@ -45,7 +76,6 @@ def process_area(dem_file,dtm_file,y1,x1,y2,x2,greens):
         # print(counter_y,counter_x)
         # counter_y+=1
     return area_diff
-
 
 def reject_outliers(data, m=2):
     return data[abs(data - np.mean(data)) < m * np.std(data)]
@@ -146,6 +176,7 @@ def draw_contours(image_array,dem_file,dtm_file,y1,x1,y2,x2,contour_1,contour_2)
     # get green colors here
     greens = get_trees(image_array,y1,x1,y2,x2)
     area = process_area(dem_file,dtm_file,y1,x1,y2,x2,greens)
+
     # print(y1,x1,y2,x2)
     area = np.array(area)
 

@@ -62,7 +62,7 @@ def process_area(dem_file,dtm_file,y1,x1,y2,x2,greens):
         temp = []
         # counter_x = 0
         for width in range(x2-x1):
-            if (greens[height][width][0] and greens[height][width][1] and greens[height][width][2]):
+            if ~(greens[height][width][0] == 0 and greens[height][width][1] == 0 and greens[height][width][2] == 0):
                 height_val = dem_area[height][width]-dtm_area[height][width]
                 if height_val > 1:
                     temp.append(height_val)
@@ -105,7 +105,7 @@ def process_dem_quantile(affine_transform,x_min,y_min,array,threshold_x,threshol
     for i in range(threshold_x):
         for j in range(threshold_y):
             height_vals.append(array[j][i])
-
+    print(np.max(height_vals))
     height_vals = reject_outliers(np.array(sorted(height_vals)),2)
     q1 = np.percentile(height_vals,percentile_1)
     q3 = np.percentile(height_vals,percentile_2)
@@ -252,7 +252,7 @@ def process_model(image_array,dem_file,dtm_file,bounding_list,mode,contour_1,con
                     loc_data["{},{},{},{}".format(x_min+x,y_min+y,x_min+w,y_min+h)] = [lat_lon,dem_height]
                 # print((x_max-x_min)*(y_max-y_min),':{}'.format(end2-start2))
         end1 = time()
-        print("{}".format(end1-start1),'\n\n')
+        print("{}s".format(end1-start1),'\n\n')
     # end = time()
     # print("PROCESS MODEL:",end-start)
     # print("ENDED")

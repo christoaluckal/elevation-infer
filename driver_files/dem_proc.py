@@ -260,7 +260,7 @@ def draw_contours(sub_image,dem_file,dtm_file,y_min,x_min,y_max,x_max,min_contou
     # Normalize the array to hold integer values. We scale it up to 255 to process the array as an integer image
     segmented_height_int_array = (segmented_height_array * 255 / np.max(segmented_height_array)).astype('uint8')
 
-    #cv2.imwrite('formatted.jpg',formatted)
+    #cv2.imwrite('formatted.jpg',segmented_height_int_array)
     
     # Make the image into RGB
     segmented_height_int_image = cv2.cvtColor(segmented_height_int_array, cv2.COLOR_BGR2RGB)
@@ -275,6 +275,7 @@ def draw_contours(sub_image,dem_file,dtm_file,y_min,x_min,y_max,x_max,min_contou
 
     # Use thresholding to generate a binarized image where every pixel having intensity > 1 are ceiled to 255 or white
     _, binary = cv2.threshold(gray, 1, 255, cv2.THRESH_BINARY_INV)
+    #cv2.imwrite('binarized.jpg',binary)
 
     # Detect contours in the binarized image
     contours, hierarchy = cv2.findContours(binary, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
@@ -290,8 +291,7 @@ def draw_contours(sub_image,dem_file,dtm_file,y_min,x_min,y_max,x_max,min_contou
 
     # Draw contours on the original sub-image
     sub_image_contour = cv2.drawContours(image_rgb,contour_list , -1, (255, 0, 0), 2)
-
-    #cv2.imwrite('bin_contour.jpg',image)
+    #cv2.imwrite('contour_binary.jpg',cv2.drawContours(gray,contour_list , -1, (255, 0, 0), 2))
 
     # Draw the bounding rectangles on the sub-image and save the valid regions to the array
     contour_bounding_region = []
@@ -302,6 +302,8 @@ def draw_contours(sub_image,dem_file,dtm_file,y_min,x_min,y_max,x_max,min_contou
         contour_bounding_region.append(segmented_height_array[top_left_y:top_left_y+rect_height,top_left_X:top_left_X+rect_width])
     # plt.imshow(sub_image_contour)
     # plt.show()
+    #cv2.imwrite('sub_image_invalid_contour.jpg',cv2.cvtColor(sub_image_contour,cv2.COLOR_BGR2RGB))
+
     return len(contour_list),contour_bounding_region,bounding_rectangle_params,sub_image_contour
 
 
@@ -349,6 +351,7 @@ def process_model(original_ortho,dem_file,dtm_file,bounding_list,min_contour_are
         # Get the number of buildings, contour list, bounding rectangles and the image with contour overlay
         contour_count,contour_rectangle_region,points_list,image_rgb = draw_contours(sub_image,dem_file,dtm_file,y_min,x_min,y_max,x_max,min_contour_area,max_contour_area)
         print("There are {} building(s) in the region".format(contour_count))
+
 
         # Select the buildings whose elevation needs to be found
         selected_coords = selector.selector(image_rgb)

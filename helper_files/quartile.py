@@ -2,8 +2,8 @@ from cv2 import sort
 import numpy as np
 from osgeo import gdal
 import affine
-dem_file = '/home/caluckal/Desktop/Github/elevation-infer/DBCA_DEM.tif'
-dtm_file = '/home/caluckal/Desktop/Github/elevation-infer/DBCA_DTM.tif'
+dem_file = 'DBCA_DEM.tif'
+dtm_file = 'DBCA_DTM.tif'
 
 def get_lon_at(affine_transform,x_coord,y_coord):
     lon, lat = affine_transform * (x_coord,y_coord)

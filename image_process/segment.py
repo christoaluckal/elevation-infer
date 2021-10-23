@@ -10,7 +10,7 @@ multi_range = (13492,5884,14988,8004)
 none_range = (13312,8164,13964,8884)
 diag_range = (9360,6852,10030,8194)
 
-og_img = cv2.imread('/home/caluckal/Desktop/Github/elevation-infer/color_ortho.jpg')
+og_img = cv2.imread('color_ortho.jpg')
 
 good_img = og_img[good_range[0]:good_range[2],good_range[1]:good_range[3]]
 # partial_img = og_img[partial_range[0]:partial_range[2],partial_range[1]:partial_range[3]]
@@ -54,7 +54,6 @@ def draw_contours(dem_file,dtm_file,y1,x1,y2,x2):
     return len(contour_list)
 
 
-# draw_contours('/home/caluckal/Desktop/Github/elevation-infer/DBCA_DEM.tif','/home/caluckal/Desktop/Github/elevation-infer/DBCA_DTM.tif',8214,11626,9126,12323)
 # draw_contours(11289,12027,11814,12312)
 # draw_contours(11243,10689,11747,11220)
 # draw_contours(13492,5884,14988,8004)

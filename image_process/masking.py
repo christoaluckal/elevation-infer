@@ -72,8 +72,8 @@ def get_trees(image_array,y1,x1,y2,x2):
     # cv2.waitKey(0)
     return mask
 
-image_array = cv2.imread('/home/caluckal/Desktop/Github/elevation-infer/good_color.png',cv2.IMREAD_UNCHANGED)
+image_array = cv2.imread('good_color.png',cv2.IMREAD_UNCHANGED)
 y1,x1,y2,x2 = 11289,12027,11814,12312
 
-draw_contours(image_array,'/home/caluckal/Desktop/Github/elevation-infer/DBCA_DEM.tif','/home/caluckal/Desktop/Github/elevation-infer/DBCA_DTM.tif',y1,x1,y2,x2)
+draw_contours(image_array,'DBCA_DEM.tif','DBCA_DTM.tif',y1,x1,y2,x2)
 

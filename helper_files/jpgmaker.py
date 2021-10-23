@@ -19,7 +19,7 @@ import numpy as np
 
 # del dem_file
 
-ortho_file = cv2.imread('/home/caluckal/Desktop/Github/elevation-infer/DBCA_Ortho.tif',cv2.IMREAD_UNCHANGED)
+ortho_file = cv2.imread('DBCA_Ortho.tif',cv2.IMREAD_UNCHANGED)
 ortho_h,ortho_w,_ = ortho_file.shape
 # 0 8973
 # print(type(ortho_file[2277][13068]))
@@ -41,6 +41,6 @@ for x in range(ortho_h):
 
 del ortho_file
 
-cv2.imwrite('/home/caluckal/Desktop/Github/elevation-infer/color_ortho.jpg',blank_image)
+cv2.imwrite('color_ortho.jpg',blank_image)
 
 # print(ortho_h,ortho_w,dem_h,dem_w)

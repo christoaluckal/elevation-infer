@@ -127,4 +127,4 @@ def breakImage(img_name,op):
 
 
 
-breakImage('/home/caluckal/Desktop/Github/elevation-infer/color_ortho.jpg','color_ortho')
+breakImage('color_ortho.jpg','color_ortho')

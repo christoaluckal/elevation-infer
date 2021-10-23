@@ -34,4 +34,7 @@ Steps for point processing:
 4. [x] Learn how to use contour
 
 ### CAUTION
+
+This code uses OSGEO and the GDAL package which is not installed through traditional pip. Hence if you use `pip3 install -r requirements.txt` it will fail to install OSGEO. Follow [this](https://mothergeo-py.readthedocs.io/en/latest/development/how-to/gdal-ubuntu-pkg.html) to install it.
+
 This code assumes that there is a relatively high overlap between the image and the DEM/DTM pair. Make sure that the coordinates match as there are cases where the size of the DEM/DTM is larger than the image so the clicked coordinates on the image **DO NOT** reflect the points on the DEM/DTM

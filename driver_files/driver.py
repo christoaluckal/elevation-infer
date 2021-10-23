@@ -1,3 +1,9 @@
+'''
+When this code runs, it checks for the input files. If the files are present then it asks the user to drag and select the regions 
+where processing needs to take place. Once all the regions are marked, press ESC and the code will run. Once processing is done another window
+is displayed to the user. This window shows the buildings present. The user then clicks on the buildings whose heights need to be determined and
+then press ESC. The output of the code shows a dictionary with the coordinates of buildings as keys and the Lat-Lon and relative height of the buildings present
+'''
 import cv2
 from matplotlib.pyplot import contour
 import dem_proc
@@ -16,31 +22,28 @@ else:
     try:
         contour_flag = args[3]
         if contour_flag == "custom":
-            contour_1 = float(input('Enter the min. contour area percentage:'))
-            contour_2 = float(input('Enter the max. contour area percentage:'))
-            percentile_1 = float(input('Enter the min quantile cutoff:'))
-            percentile_2 = float(input('Enter the max. quantile cutoff:'))
+            min_contour_area = float(input('Enter the min. contour area percentage:'))
+            max_contour_area = float(input('Enter the max. contour area percentage:'))
+            min_cutoff_percent = float(input('Enter the min quantile cutoff:'))
+            max_cutoff_percent = float(input('Enter the max. quantile cutoff:'))
         else:
             raise Exception
     except:
         print("Keeping default")
-        ortho_file = args[0]
-        dem_file = args[1]
-        dtm_file = args[2]
-        contour_1 = 0.6
-        contour_2 = 95
-        percentile_1 = 25
-        percentile_2 = 95
+        min_contour_area = 0.6
+        max_contour_area = 95
+        min_cutoff_percent = 25
+        max_cutoff_percent = 95
         
 
-img_og = cv2.imread(ortho_file)
-img_og_shape = img_og.shape
+original_ortho_array = cv2.imread(ortho_file)
+ortho_shape = original_ortho_array.shape
 
-# We downscale the original image to be able to show it in a window. This definitely leads to a ~5% error in pixel calculations
-img_disp = cv2.resize(img_og,(img_og_shape[1]//16,img_og_shape[0]//16))
+# We downscale the original image to be able to show it in a window. This leads to a ~5% error in pixel calculations
+downscaled_ortho = cv2.resize(original_ortho_array,(ortho_shape[1]//16,ortho_shape[0]//16))
 
 # Dummy image array for saving purposes
-dummy_img = img_og
+dummy_img = original_ortho_array
 
 # Pixel location variables
 ix = -1
@@ -52,15 +55,6 @@ fy = -1
 box_list = []
 
 
-# img_og_shape = img_og.shape
-# cv2.namedWindow("output", cv2.WINDOW_NORMAL)  
-# img_disp = cv2.resize(img_og,(img_og_shape[0]//16,img_og_shape[1]//16))
-# img_disp = cv2.resize(img_og,(img_og_shape[0]//2,img_og_shape[1]//2))
-# tif_to_jpg.converttiftojpg("DBCA_Ortho.tif","DBCA.jpg")
-# dummy_img = cv2.imread('DBCA.jpg')
-# cv2.imshow("output", img_disp)                            # Show image
-# cv2.waitKey(0)
-# variables
 ix = -1
 iy = -1
 fx = -1
@@ -70,29 +64,8 @@ drawing = False
 box_list = []
 loc_data = {}
 
-# def draw_on_image(image,loc_data):
+# def write_on_image(image,loc_data):
 #     for points,vals in loc_data.items():
-#         # print(points)
-#         points_vals = points.split(',')
-#         # print(points_vals)
-#         ix,iy,fx,fy = int(points_vals[0]),int(points_vals[1]),int(points_vals[2]),int(points_vals[3])
-#         cv2.line(image, pt1 =(ix, iy),
-#                           pt2 =(ix, fy),
-#                           color =(0, 0, 255),
-#                           thickness =50)
-#         cv2.line(image, pt1 =(ix, iy),
-#                           pt2 =(fx, iy),
-#                           color =(0, 0, 255),
-#                           thickness =50)
-#         cv2.line(image, pt1 =(ix, fy),
-#                           pt2 =(fx, fy),
-#                           color =(0, 0, 255),
-#                           thickness =50)
-#         cv2.line(image, pt1 =(fx, iy),
-#                           pt2 =(fx, fy),
-#                           color =(0, 0, 255),
-#                           thickness =50)
-
 #         font = cv2.FONT_HERSHEY_SIMPLEX
 #         cv2.putText(image, str(vals[-1]), ((ix+fx)//2,(iy+fy)//2), font, 3, (0, 255, 0), 2, cv2.LINE_AA)
 #         # print(ix,iy,fx,fy,(vals[-3],vals[-2]))
@@ -102,6 +75,16 @@ loc_data = {}
 
 # Since we need a precise location on the downscaled image, we normalize the pixel location using the downscaled resolution
 def normalizebb(box_list_val,shape):
+    '''
+    Function to normalize the coordinates
+
+    Params
+    box_list_val: 2D array with each element having the top-left and bottom-right coordinates of the downscaled ROI
+    shape: The value bounds that will be used for normalization
+
+    Returns
+    norm_box_list: 2D array with each element being normalized
+    '''
     norm_box_list = []
     for x in box_list_val:
         # print(x,shape)
@@ -111,21 +94,34 @@ def normalizebb(box_list_val,shape):
 
 # When we process the DEM we need the actual pixel locations and not the downscaled one. So we reverse the normalization using the original image resolution
 def reversenomarlize(box_list_val,shape):
-    revnorm_box_list = []
+    '''
+    Function to upscale the coordinates to match the original Orthomosaic resolution
+
+    Params
+    box_list_val: 2D array with each element having the top-left and bottom-right coordinates of the downscaled ROI
+    shape: The resolution to which the values need to be upscaled
+
+    Returns
+    upscaled_box_list: 2D array with each element having the top-left and bottom-right coordinates of the upscaled ROI
+    '''
+    upscaled_box_list = []
     for x in box_list_val:
         # print(x,shape)
         x1 = int(x[0]*shape[1])
         y1 = int(x[1]*shape[0])
         x2 = int(x[2]*shape[1])
         y2 = int(x[3]*shape[0])
-        revnorm_box_list.append((x1,y1,x2,y2))
+        upscaled_box_list.append((x1,y1,x2,y2))
     
-    return revnorm_box_list
+    return upscaled_box_list
 
-
+'''
+This function is called which lets the user define the ROI for further processing. Simply click the top-left of the ROI and then hold and drag
+the mouse to the bottom-right of the ROI.
+'''
 def draw_rectangle_with_drag(event, x, y, flags, param):
       
-    global ix, iy, drawing, img_disp,fx,fy
+    global ix, iy, drawing, downscaled_ortho,fx,fy
       
     if event == cv2.EVENT_LBUTTONDOWN:
         drawing = True
@@ -143,19 +139,19 @@ def draw_rectangle_with_drag(event, x, y, flags, param):
         pass
             
     else:
-        cv2.line(img_disp, pt1 =(ix, iy),
+        cv2.line(downscaled_ortho, pt1 =(ix, iy),
                           pt2 =(ix, fy),
                           color =(0, 255, 255),
                           thickness =1)
-        cv2.line(img_disp, pt1 =(ix, iy),
+        cv2.line(downscaled_ortho, pt1 =(ix, iy),
                           pt2 =(fx, iy),
                           color =(0, 255, 255),
                           thickness =1)
-        cv2.line(img_disp, pt1 =(ix, fy),
+        cv2.line(downscaled_ortho, pt1 =(ix, fy),
                           pt2 =(fx, fy),
                           color =(0, 255, 255),
                           thickness =1)
-        cv2.line(img_disp, pt1 =(fx, iy),
+        cv2.line(downscaled_ortho, pt1 =(fx, iy),
                           pt2 =(fx, fy),
                           color =(0, 255, 255),
                           thickness =1)
@@ -163,22 +159,20 @@ def draw_rectangle_with_drag(event, x, y, flags, param):
         box_list.append((ix,iy,fx,fy))
 
           
-cv2.namedWindow(winname = "Title of Popup Window")
-cv2.setMouseCallback("Title of Popup Window", 
+cv2.namedWindow(winname = "Downscaled Orthomosaic")
+cv2.setMouseCallback("Downscaled Orthomosaic", 
                      draw_rectangle_with_drag)
   
 while True:
-    cv2.imshow("Title of Popup Window", img_disp)
+    cv2.imshow("Downscaled Orthomosaic", downscaled_ortho)
       
     if cv2.waitKey(10) == 27:
-        normalized = normalizebb(box_list,img_disp.shape)
-        reversed = reversenomarlize(normalized,img_og.shape)
-        # Check contour numbers
-
-        loc_data = dem_proc.process_model(img_og,dem_file,dtm_file,reversed,'quantile',contour_1,contour_2,percentile_1,percentile_2)
-        # draw_on_image(dummy_img,loc_data)
+        normalized = normalizebb(box_list,downscaled_ortho.shape)
+        upscaled_coords = reversenomarlize(normalized,original_ortho_array.shape)
+        loc_data = dem_proc.process_model(original_ortho_array,dem_file,dtm_file,upscaled_coords,min_contour_area,max_contour_area,min_cutoff_percent,max_cutoff_percent)
+        print("\nElevations are\n")
         for x,y in loc_data.items():
-            print(x,y)
+            print('Coords:',x,'|\tValue:',y)
         break
   
 cv2.destroyAllWindows()

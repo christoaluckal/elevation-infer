@@ -1,5 +1,7 @@
 # elevation-infer
 
+This code uses an Orthomosaic Image, Digital Elevation Model and Digital Terrain Model to determine the height of buildings present in the Region of Interest determined by the user.
+
 ## Area processing
 `python3 driver_files/driver.py <image> <DEM> <DTM>` to execute default<br>
 `python3 driver_files/driver.py <image> <DEM> <DTM> custom` to execute with custom parameters<br>

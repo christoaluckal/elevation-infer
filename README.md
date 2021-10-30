@@ -3,10 +3,18 @@
 This code uses an Orthomosaic Image, Digital Elevation Model and Digital Terrain Model to determine the height of buildings present in the Region of Interest determined by the user.
 
 ## Area processing
+
+### Faster Code
+`python3 driver_files/inverse.py <image> <DEM> <DTM>` to execute default<br>
+`python3 driver_files/inverse.py <image> <DEM> <DTM> custom` to execute with custom parameters<br>
+<br>
+
+### Slower Code
 `python3 driver_files/driver.py <image> <DEM> <DTM>` to execute default<br>
 `python3 driver_files/driver.py <image> <DEM> <DTM> custom` to execute with custom parameters<br>
 <br>
-Steps for area processing:
+<br>
+## Steps for area processing:
   1.  The image is loaded and downscaled to 1/16 the size to allow viewing
   2.  A window pops up allowing you to click areas on the downscaled image. Hold down the Left-Click and drag the area for processing. Press `ESC` when you're done
   3.  The code normalizes the point and scales it up to the original image size

@@ -1,6 +1,7 @@
 *.tif
 *.jpg
 # *.png
+detector/*
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

@@ -7,6 +7,7 @@ from PIL import Image
 import matplotlib.pyplot as plt
 import selector
 from time import time
+import detection
 sys.path.append('.')
 
 # This function takes an (X,Y) coordinate with the affine transform matrix and returns latitude and longitude
@@ -360,6 +361,8 @@ def process_model(original_ortho,dem_file,dtm_file,bounding_list,min_contour_are
         # Image of the ROI
         sub_image = original_ortho[y_min:y_max,x_min:x_max]
         #cv2.imwrite('temp_images/small_image.jpg',sub_image)
+
+        # sub_image = detection.get_detection(sub_image)
 
         # Get the number of buildings, contour list, bounding rectangles and the image with contour overlay
         contour_count,contour_rectangle_region,points_list,image_rgb = get_contour_info(sub_image,dem_file,dtm_file,y_min,x_min,y_max,x_max,min_contour_area,max_contour_area)

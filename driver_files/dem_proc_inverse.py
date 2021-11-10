@@ -129,34 +129,36 @@ def remove_inv_trees(sub_image,segmented_array):
     # Convert image to HSV
     imgHSV = cv2.cvtColor(sub_image, cv2.COLOR_BGR2HSV)
 
-    #cv2.imwrite('image_hsv.jpg',imgHSV)
+    #cv2.imwrite('temp_images/image_hsv.jpg',imgHSV)
 
     # create the Mask
     mask = cv2.inRange(imgHSV, low_green, high_green)
 
-    #cv2.imwrite('init_mask.jpg',mask)
+    #cv2.imwrite('temp_images/init_mask.jpg',mask)
 
     # invert the mask
     mask = 255-mask
 
-    #cv2.imwrite('invert_mask.jpg',mask)
+    #cv2.imwrite('temp_images/invert_mask.jpg',mask)
 
     # Perform bitwise AND operation on image and mask to get the image without trees
     mask = cv2.bitwise_and(sub_image, sub_image, mask=mask)
-    op = []
+    height_of_nongreen_pixels = []
     for height in range(0,len(mask)):
         row = []
         for width in range(0,len(mask[0])):
+            # The calculation is actually either height*0 or height*1, since the mask with black areas have value [0 0 0], the first operation
+            # Will result in either a 0 or 1, which is converted to boolean and then into float for multiplication
             row.append(float(bool(mask[height][width][0] & mask[height][width][1] & mask[height][width][2]))*segmented_array[height][width])
-        op.append(row)
+        height_of_nongreen_pixels.append(row)
 
-    mask = np.array(op)
-    # cv2.imwrite('image_with_mask.jpg',mask)
+    height_of_nongreen_pixels = np.array(height_of_nongreen_pixels)
+    #cv2.imwrite('temp_images/image_with_mask.jpg',mask)
 
-    return mask
+    return height_of_nongreen_pixels
 
 
-def get_contour_areas(contour_list,total_pixel_count,min_contour_area,max_contour_area):
+def get_valid_contour_info(contour_list,total_pixel_count,min_contour_area,max_contour_area):
     '''
     This function is responsible for processing the contour list to determine valid contours
 
@@ -177,8 +179,11 @@ def get_contour_areas(contour_list,total_pixel_count,min_contour_area,max_contou
         area = cv2.contourArea(cnt)
         if area > total_pixel_count*min_contour_area and area < total_pixel_count*max_contour_area:
             x,y,w,h = cv2.boundingRect(cnt)
-            valid_contour_list.append(cnt)
-            bounding_rectangle_params.append([x,y,w,h])
+            if x == 0 and y == 0:
+                print("Invalid contour, skipped")
+            else:
+                valid_contour_list.append(cnt)
+                bounding_rectangle_params.append([x,y,w,h])
 
     return valid_contour_list,bounding_rectangle_params
 
@@ -236,7 +241,7 @@ def process_inv_area(dem_file,dtm_file,y_min,x_min,y_max,x_max):
         area_diff.append(row_vals)
     return area_diff
 
-def draw_inv_contours(sub_image,dem_file,dtm_file,y_min,x_min,y_max,x_max,min_contour_area,max_contour_area):
+def get_contour_info(sub_image,dem_file,dtm_file,y_min,x_min,y_max,x_max,min_contour_area,max_contour_area):
     '''
     This function is responsible for processing the image to determine the number of buildings and the relative height of the buildings.
 
@@ -261,18 +266,17 @@ def draw_inv_contours(sub_image,dem_file,dtm_file,y_min,x_min,y_max,x_max,min_co
     
     # We generate a 2D array with values either as the relative height or 0
     segmented_height_array = process_inv_area(dem_file,dtm_file,y_min,x_min,y_max,x_max)
+    #cv2.imwrite('temp_images/segmented_height_array.jpg',np.array(segmented_height_array))
 
     # Here, we pass the relative height array and get the same array. Instead of receiving every pixel, the following
-    # function determines valid locations and returns the relative height of only those
+    # function determines valid locations and returns the relative height of only those elements where green pixels are not present
+    # in the sub-image
     segmented_height_array = remove_inv_trees(sub_image,segmented_height_array)
-
-    # Convert array to Numpy array
-    segmented_height_array = np.array(segmented_height_array)
+    #cv2.imwrite('temp_images/segmented_height_array_no_trees.jpg',segmented_height_array)
 
     # Normalize the array to hold integer values. We scale it up to 255 to process the array as an integer image
     segmented_height_int_array = (segmented_height_array * 255 / np.max(segmented_height_array)).astype('uint8')
-
-    #cv2.imwrite('formatted.jpg',segmented_height_int_array)
+    #cv2.imwrite('temp_images/segmented_height_array_no_trees_int.jpg',segmented_height_int_array)
     
     # Make the image into RGB
     segmented_height_int_image = cv2.cvtColor(segmented_height_int_array, cv2.COLOR_BGR2RGB)
@@ -283,11 +287,9 @@ def draw_inv_contours(sub_image,dem_file,dtm_file,y_min,x_min,y_max,x_max,min_co
     # The contour algorithm works on binarized iamges, we first convert the image to a grayscaled image.
     gray = cv2.cvtColor(segmented_height_int_image, cv2.COLOR_RGB2GRAY)
 
-    #cv2.imwrite('gray_scaled.jpg',gray)
-
-    # Use thresholding to generate a binarized image where every pixel having intensity > 1 are ceiled to 255 or white
+    # Use thresholding to generate a binarized image where every pixel having intensity > 1 are floored to 0 else to 255 or white
     _, binary = cv2.threshold(gray, 1, 255, cv2.THRESH_BINARY_INV)
-    #cv2.imwrite('binarized.jpg',binary)
+    #cv2.imwrite('temp_images/binarized.jpg',binary)
 
     # Detect contours in the binarized image
     contours, hierarchy = cv2.findContours(binary, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
@@ -299,11 +301,11 @@ def draw_inv_contours(sub_image,dem_file,dtm_file,y_min,x_min,y_max,x_max,min_co
     sorted_contours= sorted(contours, key=cv2.contourArea, reverse= True)
 
     # Process the contour list to determine the valid contours
-    contour_list,bounding_rectangle_params = get_contour_areas(sorted_contours,image_pixel_count,min_contour_area,max_contour_area)
+    contour_list,bounding_rectangle_params = get_valid_contour_info(sorted_contours,image_pixel_count,min_contour_area,max_contour_area)
 
     # Draw contours on the original sub-image
     sub_image_contour = cv2.drawContours(image_rgb,contour_list , -1, (255, 0, 0), 2)
-    #cv2.imwrite('contour_binary.jpg',cv2.drawContours(gray,contour_list , -1, (255, 0, 0), 2))
+    #cv2.imwrite('temp_images/contour_binary.jpg',cv2.drawContours(gray,contour_list , -1, (255, 0, 0), 2))
 
     # Draw the bounding rectangles on the sub-image and save the valid regions to the array
     contour_bounding_region = []
@@ -314,7 +316,7 @@ def draw_inv_contours(sub_image,dem_file,dtm_file,y_min,x_min,y_max,x_max,min_co
         contour_bounding_region.append(segmented_height_array[top_left_y:top_left_y+rect_height,top_left_X:top_left_X+rect_width])
     # plt.imshow(sub_image_contour)
     # plt.show()
-    #cv2.imwrite('sub_image_invalid_contour.jpg',cv2.cvtColor(sub_image_contour,cv2.COLOR_BGR2RGB))
+    #cv2.imwrite('temp_images/sub_image_invalid_contour.jpg',cv2.cvtColor(sub_image_contour,cv2.COLOR_BGR2RGB))
 
     return len(contour_list),contour_bounding_region,bounding_rectangle_params,sub_image_contour
 
@@ -357,10 +359,10 @@ def process_model(original_ortho,dem_file,dtm_file,bounding_list,min_contour_are
         size = ((y_max-y_min)*(x_max-x_min))
         # Image of the ROI
         sub_image = original_ortho[y_min:y_max,x_min:x_max]
-        #cv2.imwrite('small_image.jpg',sub_image)
+        #cv2.imwrite('temp_images/small_image.jpg',sub_image)
 
         # Get the number of buildings, contour list, bounding rectangles and the image with contour overlay
-        contour_count,contour_rectangle_region,points_list,image_rgb = draw_inv_contours(sub_image,dem_file,dtm_file,y_min,x_min,y_max,x_max,min_contour_area,max_contour_area)
+        contour_count,contour_rectangle_region,points_list,image_rgb = get_contour_info(sub_image,dem_file,dtm_file,y_min,x_min,y_max,x_max,min_contour_area,max_contour_area)
 
         # Select the buildings whose elevation needs to be found
         selected_coords = selector.selector(image_rgb)

@@ -171,7 +171,8 @@ while True:
         loc_data = dem_proc_inverse.process_model(original_ortho_array,dem_file,dtm_file,upscaled_coords,min_contour_area,max_contour_area,min_cutoff_percent,max_cutoff_percent)
         print("\nElevations are\n")
         for x,y in loc_data.items():
-            print('Coords:',x,'|\tValue:',y)
+            contour_val = y[-1]
+            print('Coords:',x,'| Value:',y[:-1])
         break
   
 cv2.destroyAllWindows()

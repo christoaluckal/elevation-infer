@@ -162,7 +162,7 @@ def draw_rectangle_with_drag(event, x, y, flags, param):
 cv2.namedWindow(winname = "Downscaled Orthomosaic")
 cv2.setMouseCallback("Downscaled Orthomosaic", 
                      draw_rectangle_with_drag)
-coords = open('coords_new.txt','a')
+# coords = open('coords_new.txt','a')
 while True:
     cv2.imshow("Downscaled Orthomosaic", downscaled_ortho)
     
@@ -172,11 +172,7 @@ while True:
         loc_data = dem_proc_inverse.process_model(original_ortho_array,dem_file,dtm_file,upscaled_coords,min_contour_area,max_contour_area,min_cutoff_percent,max_cutoff_percent)
         print("\nElevations are\n")
         for x,y in loc_data.items():
-            contour_val = y[-1]
-            for c in contour_val:
-                val = str(c[0][0])+' '+str(c[0][1])
-                coords.write(val+'\n')
-            # print('Coords:',x,'| Value:',y[:-1])
+            print('Coords:',x,'| Value:',y)
         break
   
 cv2.destroyAllWindows()

@@ -1,42 +1,34 @@
-file = open('/home/caluckal/Desktop/Github/elevation-infer/coords_new.txt')
-poly = []
-full_polys = []
-heights = []
-for x in file.readlines():
-    vals = x[:-2]
-    vals = vals.split(' ')
-    poly.append([float(vals[0]),float(vals[1])])
-
 import geopandas as gpd
 from shapely.geometry import Polygon
+def make_single_shapefile(coords,heights,location,output_name):
+    lat_list = []
+    lon_list = []
+    for shapes in coords:
+        lat_list.append(shapes[0][1])
+        lon_list.append(shapes[0][0])
+    polygon_geom = Polygon(zip(lon_list, lat_list))
+    crs = {'init': 'epsg:4326'}
+    polygon = gpd.GeoDataFrame(crs=crs, geometry=[polygon_geom])
+    polygon['height'] = heights
+    polygon.to_file(filename=location+output_name.format(output_name), driver="ESRI Shapefile")
+    print("Done")
+    return
 
-lat_point_list = [x[1] for x in poly]
-lon_point_list = [x[0] for x in poly]
-# print(lat_point_list)
-heights.append(56.66)
-polygon_geom = Polygon(zip(lon_point_list, lat_point_list))
-full_polys.append(polygon_geom)
+def make_multiple_shapefile(coords,heights,location,output):
+    full_polys = []
+    for building in range(0,len(coords)):
+        lat_list = []
+        lon_list = []
+        for shapes in coords[building]:
+            lat_list.append(shapes[0][1])
+            lon_list.append(shapes[0][0])
 
-file = open('/home/caluckal/Desktop/Github/elevation-infer/coords.txt')
-poly = []
-for x in file.readlines():
-    vals = x[:-2]
-    vals = vals.split(' ')
-    poly.append([float(vals[0]),float(vals[1])])
 
-import geopandas as gpd
-from shapely.geometry import Polygon
+        polygon_geom = Polygon(zip(lon_list, lat_list))
+        full_polys.append(polygon_geom)
 
-lat_point_list = [x[1] for x in poly]
-lon_point_list = [x[0] for x in poly]
-# print(lat_point_list)
-heights.append(116.66)
-polygon_geom = Polygon(zip(lon_point_list, lat_point_list))
-full_polys.append(polygon_geom)
-
-crs = {'init': 'epsg:4326'}
-polygon = gpd.GeoDataFrame(crs=crs, geometry=full_polys)
-polygon.insert(1,'height',0.0)
-polygon['height'] = heights
-print(polygon)
-polygon.to_file(filename='/home/caluckal/Desktop/Github/elevation-infer/shapefile_testing/writing/polygon_new.shp', driver="ESRI Shapefile")
+    crs = {'init': 'epsg:4326'}
+    polygon = gpd.GeoDataFrame(crs=crs, geometry=full_polys)
+    polygon.insert(1,'height',0.0)
+    polygon['height'] = heights
+    polygon.to_file(filename=location+output, driver="ESRI Shapefile")

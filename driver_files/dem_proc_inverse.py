@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 import selector
 from time import time
 import detection
+import shapefile_making
 sys.path.append('.')
 
 # This function takes an (X,Y) coordinate with the affine transform matrix and returns latitude and longitude
@@ -347,7 +348,7 @@ def process_model(original_ortho,dem_file,dtm_file,bounding_list,min_contour_are
     Returns
     loc_data: A dictionary holding the coordinates of each building as key along with their longitude,latitude and relative height
     '''
-
+    count = 1
     # Convert the input parameters to percentile values
     min_contour_area = float(min_contour_area/100)
     max_contour_area = float(max_contour_area/100)
@@ -378,6 +379,10 @@ def process_model(original_ortho,dem_file,dtm_file,bounding_list,min_contour_are
 
         # Select the buildings whose elevation needs to be found
         selected_coords = selector.selector(image_rgb)
+
+        temp_coords = []
+        temp_heights = []
+
         for contours_num in range(len(contour_list)):
             contour_list[contours_num] = contour_list[contours_num]+[x_min,y_min]
             contour_lon_lat = get_lon_lat_list(dem_affine_transform,contour_list[contours_num])
@@ -386,8 +391,14 @@ def process_model(original_ortho,dem_file,dtm_file,bounding_list,min_contour_are
                 # If the clicked building lies inside a bounding rectangle then process the building region
                 if coords[0] > x and coords[0] < x+w and coords[1] > y and coords[1] < y+h:
                     dem_height,lon_lat = process_dem_quantile(dem_affine_transform,x_min+x,y_min+y,contour_rectangle_region[contours_num],w,h,min_cutoff_percent,max_cutoff_percent)
-                    loc_data["{},{},{},{}".format(x_min+x,y_min+y,x_min+w,y_min+h)] = [lon_lat,dem_height,contour_lon_lat]
-        
+                    loc_data["{},{},{},{}".format(x_min+x,y_min+y,x_min+w,y_min+h)] = [lon_lat,dem_height]
+                    temp_coords.append(contour_lon_lat)
+                    temp_heights.append(dem_height)
+                    # shapefile_making.make_multiple_shapefile(contour_lon_lat,dem_height,'./','building_{}'.format(count))
+                    count+=1
+
+    # shapefile_making.make_multiple_shapefile(temp_coords,temp_heights,'./','building')
+
     return loc_data
 
 

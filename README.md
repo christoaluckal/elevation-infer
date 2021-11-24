@@ -15,15 +15,18 @@ This code uses an Orthomosaic Image, Digital Elevation Model and Digital Terrain
 <br>
 <br>
 ## Steps for area processing:
-  1.  The image is loaded and downscaled to 1/16 the size to allow viewing
-  2.  A window pops up allowing you to click areas on the downscaled image. Hold down the Left-Click and drag the area for processing. Press `ESC` when you're done
-  3.  The code normalizes the point and scales it up to the original image size
-  4.  Every ROI is made into a new image upon which Image Processing is applied to remove non-building entities and remove them
-  5.  Once that is done, Contour Generation and Detection is done to determine all the buildings present in the small image using contour area as a filtering tool. You can change the values by running another flag 'custom' on the python3 command.
-  6.  After building detection, another window pops up with the contour and the contour bounding box overlayed on the small image. The user can select the buildings to be processed
-  7.  **Only the region within the contour rectangle** is processed by filtering out points that lie outside of a SD=2 and then values outside percentiles given by the user (Or 25,95 if default values) are filtered out.
-  8.  The code then calculates the Height, Latitude and Longitude of the point with the maximum elevation that lies in the filtered region
-  9.  It then returns a dictionary with (Top-Left X,Y of ROI),(Bottom-Right X,Y of ROI):\[ Longitude, Latitude, relative height in m\]
+  1.  The user is given the prompt to choose the manner in which the shapefile will be saved.
+  2.  The Orthomosaic image is loaded and downscaled to 1/16 the size to allow viewing
+  3.  A window pops up allowing you to click areas on the downscaled image. Hold down the Left-Click and drag the area for processing. Press `ESC` when you're done
+  4.  The code normalizes the point and scales it up to the original image size
+  5.  Every ROI is made into a new image upon which Image Processing is applied to remove non-building entities and remove them
+  6.  Once that is done, Contour Generation and Detection is done to determine all the buildings present in the small image using contour area as a filtering tool. You can change the values by running another flag 'custom' on the python3 command.
+  7.  After building detection, another window pops up with the contour and the contour bounding box overlayed on the small image. The user can select the buildings to be processed
+  8.  **Only the region within the contour rectangle** is processed by filtering out points that lie outside of a SD=2 and then values outside percentiles given by the user (Or 25,95 if default values) are filtered out.
+  9.  The code then calculates the Height, Latitude and Longitude of the point with the maximum elevation that lies in the filtered region
+  10.  It then returns a dictionary with (Top-Left X,Y of ROI),(Bottom-Right X,Y of ROI):\[ Longitude, Latitude, relative height in m\]
+  11.  Depending on the input the user gave, the shapefiles will be saved in the working directory as building_* (building_1,building_2,...)
+  12.  The shapefile can be dragged onto any GIS software that reads shapefiles and the polygon defining each building can be seen along with their elevation 
 
 ## Point Processing
 `python3 driver_files/driver_point.py <image> <DEM> <DTM>` to execute <br>
@@ -37,7 +40,7 @@ Steps for point processing:
 
 ### TODO
 1. Fine-tune the green hsv mask
-2. Try using a tree-detector
+2. Try using a building detector
 3. [x] Make the performance a little better
 4. [x] Learn how to use contour
 

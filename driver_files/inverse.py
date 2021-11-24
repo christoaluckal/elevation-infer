@@ -34,6 +34,17 @@ else:
         max_contour_area = 95
         min_cutoff_percent = 25
         max_cutoff_percent = 95
+
+while True:
+    shapefile_choice = input("Do you want the buildings to be stored separately? y/n:")
+    if shapefile_choice.lower() == 'y':
+        shapefile_choice = 'separate'
+        break
+    elif shapefile_choice.lower() == 'n':
+        shapefile_choice = 'together'
+        break
+    else:
+        print("Invalid choice")
         
 
 original_ortho_array = cv2.imread(ortho_file)
@@ -169,7 +180,7 @@ while True:
     if cv2.waitKey(10) == 27:
         normalized = normalizebb(box_list,downscaled_ortho.shape)
         upscaled_coords = reversenomarlize(normalized,original_ortho_array.shape)
-        loc_data = dem_proc_inverse.process_model(original_ortho_array,dem_file,dtm_file,upscaled_coords,min_contour_area,max_contour_area,min_cutoff_percent,max_cutoff_percent)
+        loc_data = dem_proc_inverse.process_model(original_ortho_array,dem_file,dtm_file,upscaled_coords,min_contour_area,max_contour_area,min_cutoff_percent,max_cutoff_percent,shapefile_choice)
         print("\nElevations are\n")
         for x,y in loc_data.items():
             print('Coords:',x,'| Value:',y)

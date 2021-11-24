@@ -331,7 +331,7 @@ def get_contour_info(sub_image,dem_file,dtm_file,y_min,x_min,y_max,x_max,min_con
 
     return contour_list,contour_bounding_region,bounding_rectangle_params,sub_image_contour
 
-def process_model(original_ortho,dem_file,dtm_file,bounding_list,min_contour_area,max_contour_area,min_cutoff_percent,max_cutoff_percent):
+def process_model(original_ortho,dem_file,dtm_file,bounding_list,min_contour_area,max_contour_area,min_cutoff_percent,max_cutoff_percent,shapefile_method):
     '''
     This function takes the DEM,DTM, point list and returns a dictionary with the (X1,Y1)(X2,Y2) of each building as key and (Lat,Lon),Relative height as values
     Params
@@ -362,6 +362,8 @@ def process_model(original_ortho,dem_file,dtm_file,bounding_list,min_contour_are
     # Retrieve the affine transform matrix
     dem_affine_transform = affine.Affine.from_gdal(*demdata.GetGeoTransform())
 
+    temp_coords = []
+    temp_heights = []
     # Iterate through all the ROIs
     for points in bounding_list:
 
@@ -380,8 +382,7 @@ def process_model(original_ortho,dem_file,dtm_file,bounding_list,min_contour_are
         # Select the buildings whose elevation needs to be found
         selected_coords = selector.selector(image_rgb)
 
-        temp_coords = []
-        temp_heights = []
+
 
         for contours_num in range(len(contour_list)):
             contour_list[contours_num] = contour_list[contours_num]+[x_min,y_min]
@@ -394,10 +395,11 @@ def process_model(original_ortho,dem_file,dtm_file,bounding_list,min_contour_are
                     loc_data["{},{},{},{}".format(x_min+x,y_min+y,x_min+w,y_min+h)] = [lon_lat,dem_height]
                     temp_coords.append(contour_lon_lat)
                     temp_heights.append(dem_height)
-                    # shapefile_making.make_multiple_shapefile(contour_lon_lat,dem_height,'./','building_{}'.format(count))
+                    if shapefile_method == 'separate':
+                        shapefile_making.make_multiple_shapefile(contour_lon_lat,dem_height,'./','building_{}'.format(count))
                     count+=1
-
-    # shapefile_making.make_multiple_shapefile(temp_coords,temp_heights,'./','building')
+    if shapefile_method == 'together':
+        shapefile_making.make_single_shapefile(temp_coords,temp_heights,'./','building')
 
     return loc_data
 

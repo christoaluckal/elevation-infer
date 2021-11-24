@@ -1,6 +1,6 @@
 import geopandas as gpd
 from shapely.geometry import Polygon
-def make_single_shapefile(coords,heights,location,output_name):
+def make_multiple_shapefile(coords,heights,location,output_name):
     lat_list = []
     lon_list = []
     for shapes in coords:
@@ -14,7 +14,7 @@ def make_single_shapefile(coords,heights,location,output_name):
     print("Done")
     return
 
-def make_multiple_shapefile(coords,heights,location,output):
+def make_single_shapefile(coords,heights,location,output):
     full_polys = []
     for building in range(0,len(coords)):
         lat_list = []

@@ -1,3 +1,5 @@
+import warnings
+warnings.simplefilter(action='ignore', category=FutureWarning)
 import geopandas as gpd
 from shapely.geometry import Polygon
 def make_multiple_shapefile(coords,heights,location,output_name):
@@ -11,7 +13,6 @@ def make_multiple_shapefile(coords,heights,location,output_name):
     polygon = gpd.GeoDataFrame(crs=crs, geometry=[polygon_geom])
     polygon['height'] = heights
     polygon.to_file(filename=location+output_name.format(output_name), driver="ESRI Shapefile")
-    print("Done")
     return
 
 def make_single_shapefile(coords,heights,location,output):

@@ -382,7 +382,7 @@ def process_model(original_ortho,dem_file,dtm_file,bounding_list,min_contour_are
         # Select the buildings whose elevation needs to be found
         selected_coords = selector.selector(image_rgb)
 
-
+        dup_coords = []
 
         for contours_num in range(len(contour_list)):
             contour_list[contours_num] = contour_list[contours_num]+[x_min,y_min]
@@ -390,7 +390,8 @@ def process_model(original_ortho,dem_file,dtm_file,bounding_list,min_contour_are
             for coords in selected_coords:
                 x,y,w,h = points_list[contours_num]
                 # If the clicked building lies inside a bounding rectangle then process the building region
-                if coords[0] > x and coords[0] < x+w and coords[1] > y and coords[1] < y+h:
+                if coords[0] > x and coords[0] < x+w and coords[1] > y and coords[1] < y+h and (x,y,w,h) not in dup_coords:
+                    dup_coords.append((x,y,w,h))
                     dem_height,lon_lat = process_dem_quantile(dem_affine_transform,x_min+x,y_min+y,contour_rectangle_region[contours_num],w,h,min_cutoff_percent,max_cutoff_percent)
                     loc_data["{},{},{},{}".format(x_min+x,y_min+y,x_min+w,y_min+h)] = [lon_lat,dem_height]
                     temp_coords.append(contour_lon_lat)

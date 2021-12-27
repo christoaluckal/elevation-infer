@@ -364,6 +364,7 @@ def process_model(original_ortho,dem_file,dtm_file,bounding_list,min_contour_are
 
     temp_coords = []
     temp_heights = []
+    cluster_testing = []
     # Iterate through all the ROIs
     for points in bounding_list:
 
@@ -383,7 +384,6 @@ def process_model(original_ortho,dem_file,dtm_file,bounding_list,min_contour_are
         selected_coords = selector.selector(image_rgb)
 
         dup_coords = []
-
         for contours_num in range(len(contour_list)):
             contour_list[contours_num] = contour_list[contours_num]+[x_min,y_min]
             contour_lon_lat = get_lon_lat_list(dem_affine_transform,contour_list[contours_num])
@@ -396,11 +396,17 @@ def process_model(original_ortho,dem_file,dtm_file,bounding_list,min_contour_are
                     loc_data["{},{},{},{}".format(x_min+x,y_min+y,x_min+w,y_min+h)] = [lon_lat,dem_height]
                     temp_coords.append(contour_lon_lat)
                     temp_heights.append(dem_height)
+                    cluster_testing.append([lon_lat,dem_height,contour_lon_lat])
                     if shapefile_method == 'separate':
                         shapefile_making.make_multiple_shapefile(contour_lon_lat,dem_height,'./','building_{}'.format(count))
                     count+=1
     if shapefile_method == 'together':
         shapefile_making.make_single_shapefile(temp_coords,temp_heights,'./','building')
+
+    print(len(cluster_testing))
+    import pickle
+    with open('buildings.pkl','wb') as f:
+        pickle.dump(cluster_testing,f)
 
     return loc_data
 

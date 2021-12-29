@@ -5,8 +5,18 @@ import pandas as pd
 
 
 def kmeans_test(datalist,cluster_num):
-    dataset = np.array(datalist)
-    X = dataset
+    datalist = np.array(datalist)
+    new_test = []
+    for i in datalist:
+        if i[1] < 4:
+            new_test.append([i[0][0],i[0][1],0])
+        else:
+            new_test.append([i[0][0],i[0][1],1])
+
+    X = np.array(new_test)
+    # print(X)
+    # print(X[0])
+    # X = dataset
     color_list = [
         "blue",
         "green",
@@ -35,11 +45,13 @@ def kmeans_test(datalist,cluster_num):
     kmeans = KMeans(n_clusters=cluster_num,init='k-means++',random_state=42)
     y_pred = kmeans.fit_predict(X)
     # %%
+    fig = plt.figure(figsize = (15,15))
+    ax = fig.add_subplot(111, projection='3d')
     for i in range(cluster_num+1):
-        plt.scatter(X[y_pred == i,0],X[y_pred == i,1],c=color_list[(i%len(color_list))])
+        ax.scatter(X[y_pred == i,0],X[y_pred == i,1],X[y_pred == i,2], s = 40 , color = color_list[i%len(color_list)])
         # plt.scatter(X[y_pred == 1,0],X[y_pred == 1,1],c='green')
 
-    plt.scatter(kmeans.cluster_centers_[:,0],kmeans.cluster_centers_[:,1],c='orange',s=100)
+    # plt.scatter(kmeans.cluster_centers_[:,0],kmeans.cluster_centers_[:,1],c='orange',s=100)
     plt.show()
 
 

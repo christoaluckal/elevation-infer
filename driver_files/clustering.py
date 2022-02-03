@@ -55,24 +55,44 @@ def makeRotation(base_lon,base_lat):
 #     new_list = pickle.load(f)
 # kmeans.kmeans_test(new_list,10)
 
+def shoelace(x_y):
+    x = x_y[:,:,0]
+    y = x_y[:,:,1]
+    x_avg = np.average(x)
+    y_avg = np.average(y)
+    x = x-x_avg
+    y=y-y_avg
+    latitudeFactor = 111132.954-559.822*math.cos(2*math.pi*y[0]/180)+1.175*math.cos(4*math.pi*y[0]/180)
+    longitudeFactor = 111319.488*math.cos(math.pi*x[0]/180)
+    S1 = np.sum(x*np.roll(y,-1))
+    S2 = np.sum(y*np.roll(x,-1))
+    area = .5*np.absolute(S1 - S2)
+    area=area*latitudeFactor*longitudeFactor
+    print(area)
+    # return area
+
 def write_new():
     with open('buildings.pkl','rb') as bld:
         bld_list = pickle.load(bld)
 
     t_list = []
 
-    for i in range(500):
-        sample = bld_list[rd(0,4)]
+    for i in range(1):
+        sample = bld_list[0]
+        # LonLat
         sample0 = np.array(sample[0])
+        # Elevation
         sample1 = np.array(sample[1])
+        # Points
         sample2 = np.array(sample[2])
-        factor_val_x = rd(-500,500)
-        factor_val_y = rd(-500,500)
-        ele_rand = rd(0,10)
-        sample0 = sample0 + [factor_val_x*lon_factor,factor_val_y*lat_factor]
-        sample1 = sample1*ele_factor*ele_rand
-        sample2 =sample2 + [factor_val_x*lon_factor,factor_val_y*lat_factor]
-        
+
+        # factor_val_x = rd(-500,500)
+        # factor_val_y = rd(-500,500)
+        # ele_rand = rd(0,10)
+        # sample0 = sample0 + [factor_val_x*lon_factor,factor_val_y*lat_factor]
+        # sample1 = sample1*ele_factor*ele_rand
+        # sample2 =sample2 + [factor_val_x*lon_factor,factor_val_y*lat_factor]
+        print(shoelace(sample2))
         t_list.append([sample0,sample1,sample2])
 
 
@@ -86,5 +106,5 @@ def clust():
 
     kmeans.kmeans_test(tt_list,2)
 
-# write_new()
-clust()
+write_new()
+# clust()

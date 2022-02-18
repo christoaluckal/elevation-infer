@@ -68,8 +68,8 @@ def shoelace(x_y):
     S2 = np.sum(y*np.roll(x,-1))
     area = .5*np.absolute(S1 - S2)
     area=area*latitudeFactor*longitudeFactor
-    print(area)
-    # return area
+    # print(area)
+    return area
 
 def write_new():
     with open('buildings.pkl','rb') as bld:
@@ -77,8 +77,27 @@ def write_new():
 
     t_list = []
 
-    for i in range(1):
-        sample = bld_list[0]
+    # for i in range(len(bld_list)):
+    #     sample = bld_list[i]
+    #     # LonLat
+    #     sample0 = np.array(sample[0])
+    #     # Elevation
+    #     sample1 = np.array(sample[1])
+    #     # Points
+    #     sample2 = np.array(sample[2])
+
+    #     # factor_val_x = rd(-500,500)
+    #     # factor_val_y = rd(-500,500)
+    #     # ele_rand = rd(0,10)
+    #     # sample0 = sample0 + [factor_val_x*lon_factor,factor_val_y*lat_factor]
+    #     # sample1 = sample1*ele_factor*ele_rand
+    #     # sample2 =sample2 + [factor_val_x*lon_factor,factor_val_y*lat_factor]
+        
+    #     t_list.append([sample0,sample1,sample2])
+    #     print(shoelace(sample2))
+
+    for i in range(0,100):
+        sample = bld_list[rd(0,len(bld_list)-1)]
         # LonLat
         sample0 = np.array(sample[0])
         # Elevation
@@ -86,12 +105,12 @@ def write_new():
         # Points
         sample2 = np.array(sample[2])
 
-        # factor_val_x = rd(-500,500)
-        # factor_val_y = rd(-500,500)
-        # ele_rand = rd(0,10)
-        # sample0 = sample0 + [factor_val_x*lon_factor,factor_val_y*lat_factor]
-        # sample1 = sample1*ele_factor*ele_rand
-        # sample2 =sample2 + [factor_val_x*lon_factor,factor_val_y*lat_factor]
+        factor_val_x = rd(-500,500)
+        factor_val_y = rd(-500,500)
+        ele_rand = rd(0,10)
+        sample0 = sample0 + [factor_val_x*lon_factor,factor_val_y*lat_factor]
+        sample1 = sample1*ele_factor*ele_rand
+        sample2 =sample2 + [factor_val_x*lon_factor,factor_val_y*lat_factor]
         print(shoelace(sample2))
         t_list.append([sample0,sample1,sample2])
 
@@ -107,4 +126,4 @@ def clust():
     kmeans.kmeans_test(tt_list,2)
 
 write_new()
-# clust()
+clust()

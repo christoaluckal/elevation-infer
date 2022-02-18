@@ -10,10 +10,8 @@ def kmeans_test(datalist,cluster_num):
     for i in datalist:
         if i[1] < 4:
             new_test.append([i[0][0],i[0][1],0])
-        elif i[1] < 10:
-            new_test.append([i[0][0],i[0][1],1])
         else:
-            new_test.append([i[0][0],i[0][1],2])
+            new_test.append([i[0][0],i[0][1],1])
 
     X = np.array(new_test)
     # print(X)
@@ -27,7 +25,7 @@ def kmeans_test(datalist,cluster_num):
         "magenta",
         "yellow",
         "black",
-]
+    ]
     # %%
     from sklearn.cluster import KMeans
     # wcss_list = []

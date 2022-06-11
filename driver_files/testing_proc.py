@@ -145,15 +145,16 @@ def remove_inv_trees(sub_image,segmented_array):
     # create the Mask
     mask = cv2.inRange(imgHSV, low_green, high_green)
 
-    #cv2.imwrite('temp_images/init_mask.jpg',mask)
+    cv2.imwrite('temp_images/mask.jpg',mask)
 
     # invert the mask
     mask = 255-mask
 
-    #cv2.imwrite('temp_images/invert_mask.jpg',mask)
+    cv2.imwrite('temp_images/inv_mask.jpg',mask)
 
     # Perform bitwise AND operation on image and mask to get the image without trees
     mask = cv2.bitwise_and(sub_image, sub_image, mask=mask)
+    cv2.imwrite('temp_images/non_trees_mask.jpg',mask)
     height_of_nongreen_pixels = []
     for height in range(0,len(mask)):
         row = []
@@ -164,7 +165,7 @@ def remove_inv_trees(sub_image,segmented_array):
         height_of_nongreen_pixels.append(row)
 
     height_of_nongreen_pixels = np.array(height_of_nongreen_pixels)
-    #cv2.imwrite('temp_images/image_with_mask.jpg',mask)
+    cv2.imwrite('temp_images/image_with_mask.jpg',height_of_nongreen_pixels)
 
     return height_of_nongreen_pixels
 
@@ -280,21 +281,22 @@ def get_contour_info(sub_image,dem_file,dtm_file,y_min,x_min,y_max,x_max,min_con
     
     # We generate a 2D array with values either as the relative height or 0
     segmented_height_array = process_inv_area(dem_file,dtm_file,y_min,x_min,y_max,x_max)
-    #cv2.imwrite('temp_images/segmented_height_array.jpg',np.array(segmented_height_array))
+    # cvprinting cv2.imwrite('temp_images/absolute_elevation.jpg',np.array(segmented_height_array))
 
-    cv2.imwrite('/home/caluckal/Desktop/Github/elevation-infer/trees/{}.png'.format(counter),sub_image)
-    with open('/home/caluckal/Desktop/Github/elevation-infer/trees/{}.npy'.format(counter), 'wb') as f:
-        np.save(f,segmented_height_array)
-    counter=counter+1
+    # cv2.imwrite('/home/caluckal/Desktop/Github/elevation-infer/trees/{}.png'.format(counter),sub_image)
+    # with open('/home/caluckal/Desktop/Github/elevation-infer/trees/{}.npy'.format(counter), 'wb') as f:
+    #     np.save(f,segmented_height_array)
+    # counter=counter+1
+
     # Here, we pass the relative height array and get the same array. Instead of receiving every pixel, the following
     # function determines valid locations and returns the relative height of only those elements where green pixels are not present
     # in the sub-image
     segmented_height_array = remove_inv_trees(sub_image,segmented_height_array)
-    #cv2.imwrite('temp_images/segmented_height_array_no_trees.jpg',segmented_height_array)
+    # cvprinting cv2.imwrite('temp_images/segmented_height_array_no_trees.jpg',segmented_height_array)
 
     # Normalize the array to hold integer values. We scale it up to 255 to process the array as an integer image
     segmented_height_int_array = (segmented_height_array * 255 / np.max(segmented_height_array)).astype('uint8')
-    #cv2.imwrite('temp_images/segmented_height_array_no_trees_int.jpg',segmented_height_int_array)
+    # cvprinting cv2.imwrite('temp_images/segmented_height_array_no_trees_int.jpg',segmented_height_int_array)
     
     # Make the image into RGB
     segmented_height_int_image = cv2.cvtColor(segmented_height_int_array, cv2.COLOR_BGR2RGB)
@@ -307,7 +309,7 @@ def get_contour_info(sub_image,dem_file,dtm_file,y_min,x_min,y_max,x_max,min_con
 
     # Use thresholding to generate a binarized image where every pixel having intensity > 1 are floored to 0 else to 255 or white
     _, binary = cv2.threshold(gray, 1, 255, cv2.THRESH_BINARY_INV)
-    #cv2.imwrite('temp_images/binarized.jpg',binary)
+    # cvprinting cv2.imwrite('temp_images/binarized.jpg',binary)
 
     # Detect contours in the binarized image
     contours, hierarchy = cv2.findContours(binary, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
@@ -323,7 +325,7 @@ def get_contour_info(sub_image,dem_file,dtm_file,y_min,x_min,y_max,x_max,min_con
 
     # Draw contours on the original sub-image
     sub_image_contour = cv2.drawContours(image_rgb,contour_list , -1, (255, 0, 0), 2)
-    #cv2.imwrite('temp_images/contour_binary.jpg',cv2.drawContours(gray,contour_list , -1, (255, 0, 0), 2))
+    # cvprinting cv2.imwrite('temp_images/contour_binary.jpg',cv2.drawContours(gray,contour_list , -1, (255, 0, 0), 2))
 
     # Draw the bounding rectangles on the sub-image and save the valid regions to the array
     contour_bounding_region = []
@@ -334,7 +336,7 @@ def get_contour_info(sub_image,dem_file,dtm_file,y_min,x_min,y_max,x_max,min_con
         contour_bounding_region.append(segmented_height_array[top_left_y:top_left_y+rect_height,top_left_X:top_left_X+rect_width])
     # plt.imshow(sub_image_contour)
     # plt.show()
-    #cv2.imwrite('temp_images/sub_image_invalid_contour.jpg',cv2.cvtColor(sub_image_contour,cv2.COLOR_BGR2RGB))
+    # cvprinting cv2.imwrite('temp_images/image_contour.jpg',cv2.cvtColor(sub_image_contour,cv2.COLOR_BGR2RGB))
 
     return contour_list,contour_bounding_region,bounding_rectangle_params,sub_image_contour
 
@@ -380,7 +382,7 @@ def process_model(original_ortho,dem_file,dtm_file,bounding_list,min_contour_are
         size = ((y_max-y_min)*(x_max-x_min))
         # Image of the ROI
         sub_image = original_ortho[y_min:y_max,x_min:x_max]
-        #cv2.imwrite('temp_images/small_image.jpg',sub_image)
+        # cvprinting cv2.imwrite('temp_images/sub_image.jpg',sub_image)
 
         # sub_image = detection.get_detection(sub_image)
 
@@ -402,18 +404,25 @@ def process_model(original_ortho,dem_file,dtm_file,bounding_list,min_contour_are
                     dem_height,lon_lat = process_dem_quantile(dem_affine_transform,x_min+x,y_min+y,contour_rectangle_region[contours_num],w,h,min_cutoff_percent,max_cutoff_percent)
                     loc_data["{},{},{},{}".format(x_min+x,y_min+y,x_min+w,y_min+h)] = [lon_lat,dem_height]
                     temp_coords.append(contour_lon_lat)
-                    temp_heights.append(dem_height)
-                    cluster_testing.append([lon_lat,dem_height,contour_lon_lat])
-                    if shapefile_method == 'separate':
-                        shapefile_making.make_multiple_shapefile(contour_lon_lat,dem_height,'./','building_{}'.format(count))
-                    count+=1
-    if shapefile_method == 'together':
-        shapefile_making.make_single_shapefile(temp_coords,temp_heights,'./','building')
+                    temp_heights.append([dem_height,(y_max-y_min)*(x_max-x_min)])
+    #                 cluster_testing.append([lon_lat,dem_height,contour_lon_lat])
+    #                 if shapefile_method == 'separate':
+    #                     shapefile_making.make_multiple_shapefile(contour_lon_lat,dem_height,'./','building_{}'.format(count))
+    #                 count+=1
+    # if shapefile_method == 'together':
+    #     shapefile_making.make_single_shapefile(temp_coords,temp_heights,'./','building')
 
-    print(len(cluster_testing))
-    import pickle
-    with open('buildings.pkl','wb') as f:
-        pickle.dump(cluster_testing,f)
+    import distance
+    distance.compute_RMSE(temp_coords)
+    # import pandas as pd
+
+    # pd_f = pd.DataFrame(temp_heights)
+    # print(pd_f.describe())
+    # print(temp_heights)
+    # print(len(cluster_testing))
+    # import pickle
+    # with open('buildings.pkl','wb') as f:
+    #     pickle.dump(cluster_testing,f)
 
     return loc_data
 

@@ -1,13 +1,14 @@
 *.tif
 *.jpg
 # *.png
+trees 
 detector/*
 shapefile_testing
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
 *$py.class
-
+*.zip
 # C extensions
 *.so
 

@@ -406,11 +406,11 @@ def process_model(original_ortho,dem_file,dtm_file,bounding_list,min_contour_are
                     temp_coords.append(contour_lon_lat)
                     temp_heights.append([dem_height,(y_max-y_min)*(x_max-x_min)])
     #                 cluster_testing.append([lon_lat,dem_height,contour_lon_lat])
-    #                 if shapefile_method == 'separate':
-    #                     shapefile_making.make_multiple_shapefile(contour_lon_lat,dem_height,'./','building_{}'.format(count))
-    #                 count+=1
-    # if shapefile_method == 'together':
-    #     shapefile_making.make_single_shapefile(temp_coords,temp_heights,'./','building')
+                    if shapefile_method == 'separate':
+                        shapefile_making.make_multiple_shapefile(contour_lon_lat,dem_height,'./','building_{}'.format(count))
+                    count+=1
+    if shapefile_method == 'together':
+        shapefile_making.make_single_shapefile(temp_coords,temp_heights,'./','building')
 
     import distance
     distance.compute_RMSE(temp_coords)

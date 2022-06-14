@@ -282,10 +282,12 @@ def get_contour_info(sub_image,dem_file,dtm_file,y_min,x_min,y_max,x_max,min_con
     segmented_height_array = process_inv_area(dem_file,dtm_file,y_min,x_min,y_max,x_max)
     #cv2.imwrite('temp_images/segmented_height_array.jpg',np.array(segmented_height_array))
 
-    cv2.imwrite('/home/caluckal/Desktop/Github/elevation-infer/trees/{}.png'.format(counter),sub_image)
-    with open('/home/caluckal/Desktop/Github/elevation-infer/trees/{}.npy'.format(counter), 'wb') as f:
-        np.save(f,segmented_height_array)
-    counter=counter+1
+    # cv2.imwrite('/home/caluckal/Desktop/Github/elevation-infer/trees/{}.png'.format(counter),sub_image)
+    # with open('/home/caluckal/Desktop/Github/elevation-infer/trees/{}.npy'.format(counter), 'wb') as f:
+    #     np.save(f,segmented_height_array)
+    # counter=counter+1
+
+
     # Here, we pass the relative height array and get the same array. Instead of receiving every pixel, the following
     # function determines valid locations and returns the relative height of only those elements where green pixels are not present
     # in the sub-image
